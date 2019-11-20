@@ -3,15 +3,15 @@ defmodule TwitterengineTest do
   doctest Twitterengine
 
   setup do
-    tweeter_server = start_supervised!(TwitterServer)
+    tweeter_server = start_supervised!(TwitterEngine.Server)
     %{server: tweeter_server}
   end
 
   test "Let's check registration", %{server: tweeter_server} do
-    assert TwitterServer.lookup(registry, "client-1") == []
+    assert :ets.lookup(:tab_user, "client_1") == []
 
-    Genserver.cast(:client-1, {:register})
-    assert [{"1", [], [], "connected", []}] = TwitterServer.lookup(registry, "client-1")
+    Genserver.cast(:client_1, {:register})
+    assert [{"1", [], [], "connected", []}] = :ets.lookup(:tab_user, "client_1")
     
   end
 

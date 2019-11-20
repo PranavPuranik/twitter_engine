@@ -5,13 +5,14 @@ defmodule TwitterEngine.Client do
   use GenServer
 
   # Initialization
-  def start_link({x, messages}) do
-    GenServer.start_link(__MODULE__, opts, [name: String.to_atom("client-#{x}")])
+  def start_link({id, messages, clients}) do
+    IO.puts "Here #{id}"
+    GenServer.start_link(__MODULE__, {id, messages, clients}, [name: String.to_atom("client_#{id}")])
   end
 
-  def init(opts) do
+  def init({id, messages, clients}) do
     
-    {:ok, opts}
+    {:ok, {id, messages, clients}}
   end
 
   # API
@@ -32,11 +33,11 @@ defmodule TwitterEngine.Client do
 
 
 
-  def handle_cast({:register}, {id, messages}) do
+  def handle_cast({:register}, {id, messages, clients}) do
     my_tweets = ["Tweet from #{id}"]
     #ZIPF: Randomly start tweeting/retweeting/subscribe/querying activities acc to zipf rank
-    acts = cond do
-       id <= (clients*0.01) ->
+    messages = cond do
+       id <= (clients * 0.01) ->
           messages * 20
            
        id <= (clients*0.1) ->
@@ -48,9 +49,9 @@ defmodule TwitterEngine.Client do
        true ->
           messages
      end
-    GenServer.cast({:twitterServer,servernode},{:registeruser,id})
+    GenServer.cast({:twitterServer,'abc'},{:registeruser,id})
     
-    {:noreply, {x, messages}}
+    {:noreply, {id, messages, clients}}
   end
 
   # def handle_info({:baz, [value]}, state) do
