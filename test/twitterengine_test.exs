@@ -10,23 +10,34 @@ defmodule TwitterengineTest do
   test "Registration", %{server: server_pid,client: client_pid} do
     assert [] =:ets.lookup(:tab_user, 1)
 
-    GenServer.call(client_pid,{:register,server_pid})
-    assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
+    GenServer.cast(client_pid,{:register,server_pid})
+    :sys.get_state(client_pid)
+    :sys.get_state(server_pid)
+    assert [{1, [], [], "connected", 0}] = :ets.lookup(:tab_user, 1)
   end
 
   test "De-Registration", %{server: server_pid,client: client_pid} do
-    GenServer.call(client_pid,{:register,server_pid})
+    GenServer.cast(client_pid,{:register,server_pid})
+    :sys.get_state(client_pid)
+    :sys.get_state(server_pid)
     assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
 
-    GenServer.call(client_pid,{:deRegister,server_pid})
+    GenServer.cast(client_pid,{:deRegister,server_pid})
+    :sys.get_state(client_pid)
+    :sys.get_state(server_pid)
     assert [] =:ets.lookup(:tab_user, 1)
   end
 
   test "Tweet", %{server: server_pid,client: client_pid} do
     GenServer.call(client_pid,{:register,server_pid})
+    assert []=:ets.tab2list(:tab_tweet)
+
     tweetId = GenServer.call(client_pid,{:tweet,server_pid,["foo", "bar"]})
     contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
     assert  contains=true
+  end
+
+  test "Hash", %{server: server_pid,client: client_pid} do
   end
 
 
