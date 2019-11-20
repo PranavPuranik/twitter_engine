@@ -8,8 +8,8 @@ defmodule TwitterEngine.Server do
     def init({clientnode}) do
         # state:
         # ets tables
-        # IO.puts "Server Started"
-        # IO.puts "-------------------------------"
+        IO.puts "Server Started"
+        IO.puts "-------------------------------"
         :ets.new(:tab_user, [:set, :protected, :named_table])
         :ets.new(:tab_tweet, [:set, :protected, :named_table])
         :ets.new(:tab_msgq, [:set, :protected, :named_table])
@@ -36,11 +36,22 @@ defmodule TwitterEngine.Server do
 
     def handle_cast({:registeruser,x},{clientnode}) do
         #update table (add a new user x)
-        #IO.puts("Registering user #{x}")
+        IO.puts("Registering user #{x}")
+
         :ets.insert_new(:tab_user, {x, [], [], "connected",0})
         GenServer.cast({:orc,clientnode},{:registered})
         {:noreply,{clientnode}}
     end
+
+    def handle_call({:register, id}, _from, {clientnode}) do
+        IO.puts("Registering user #{id}")
+        :ets.insert_new(:tab_user, {id, [], [], "connected",0})
+        GenServer.cast({:orc,clientnode},{:registered})
+        {:reply, [], {clientnode}}
+    
+    end
+
+
 
     def handle_cast({:reconnection,x},{clientnode})do
         :ets.update_element(:tab_user,x,{4, "connected"})

@@ -5,22 +5,22 @@ defmodule TwitterEngine.Client do
   use GenServer
 
   # Initialization
-  def start_link(id, messages, clients) do
+  def start_link({id, messages, clients}) do
     #IO.puts "Here #{id}"
     GenServer.start_link(__MODULE__, {id, messages, clients}, name: String.to_atom("client_#{id}"))
   end
 
   def init({id, messages, clients}) do
 
-    #IO.puts "Client #{id} Started"
-    #IO.puts "-------------------------------"
+    IO.puts "Client #{id} Started"
+    IO.puts "-------------------------------"
     
     {:ok, {id, messages, clients}}
   end
 
   # API
-  def foo(value) do
-    #GenServer.call(__MODULE__, {:foo, [value]})
+  def register_self() do
+    GenServer.cast(self(), {:register})
   end
 
   def bar(value) do
@@ -34,6 +34,13 @@ defmodule TwitterEngine.Client do
   #   {:reply, resp, state}
   # end
 
+
+  def handle_call({:register}, _from, {id, messages, clients}) do
+    
+    _ = GenServer.call({:twitterServer,'abc'},{:registeruser,id})
+
+    {:reply, [], {id, messages, clients}}
+  end
 
 
   def handle_cast({:register}, {id, messages, clients}) do
