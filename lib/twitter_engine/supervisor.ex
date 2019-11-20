@@ -12,6 +12,7 @@ defmodule ApplicationSupervisor do
           worker(TwitterEngine.Client, [{n, messages, clients}], [id: "worker_client_#{n}"] ) 
         end)
       ]
+      
       supervise children, strategy: :one_for_one
     end
 
