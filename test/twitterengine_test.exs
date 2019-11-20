@@ -48,8 +48,59 @@ defmodule TwitterengineTest do
     assert  contains=true
   end
 
-  #====================  TWEET TESTING =========================#
-  test "Hash", %{server: server_pid,clients: clients} do
+  #====================  HASHTAG TESTING =========================#
+  test "DoubleHashTag", %{server: server_pid,clients: clients} do
+    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(server_pid)
+    assert []=:ets.tab2list(:tab_tweet)
+
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#COP5615 is #great"]})
+    assert [{"#COP5615", _}] = :ets.lookup(:tab_hashtag, "#COP5615")
+    assert [{"#great", _}] = :ets.lookup(:tab_hashtag, "#great")
+  end
+
+ #====================  MENTIONS TESTING =========================# 
+  test "DoubleMentions", %{server: server_pid,clients: clients} do
+    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(server_pid)
+    assert []=:ets.tab2list(:tab_tweet)
+
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is @hero"]})
+    #IO.inspect :ets.tab2list(:tab_mentions)
+    assert [{"@pranav", _}] = :ets.lookup(:tab_mentions, "@pranav")
+    assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
+  end
+
+  #====================  QUERY TWEETS WITH HASHTAG TESTING =========================#
+  test "Query-tweets with specific hashtags", %{server: server_pid,clients: clients} do
+    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(server_pid)
+    assert []=:ets.tab2list(:tab_tweet)
+
+    tweetIdsWithHashHero = []
+    tweetIdsWithoutHashHero = []
+    tweetIdsWithHashHero ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"]})]
+    tweetIdsWithHashHero ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #hero"]})]
+    tweetIdsWithoutHashHero ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#DOS is #great"]})]
+    assert tweetIdsWithoutHashHero = elem(Enum.at(:ets.lookup(:tab_hashtag, "#hero"),0),1)
+  end
+
+  #====================  QUERY TEST WITH MENTIONS TESTING =========================#
+  test "Query-tweets with specific mentions", %{server: server_pid,clients: clients} do
+    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(server_pid)
+    assert []=:ets.tab2list(:tab_mentions)
+
+    tweetIdsWithMentionPranav = []
+    tweetIdsWithoutMentionPranav = []
+    tweetIdsWithMentionPranav ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #champion"]})]
+    tweetIdsWithMentionPranav ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"]})]
+    tweetIdsWithoutMentionPranav ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #great"]})]
+    assert tweetIdsWithMentionPranav = elem(Enum.at(:ets.lookup(:tab_mentions, "@pranav"),0),1)
   end
 
   #====================  SUBSCRIBER TESTING =========================#
@@ -83,6 +134,5 @@ defmodule TwitterengineTest do
     assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
 
   end
-
 
 end
