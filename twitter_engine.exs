@@ -8,7 +8,7 @@ defmodule TwitterEngine do
   end
 
   def infinite() do
-  	infinite()
+  	#infinite()
   end
 
 end

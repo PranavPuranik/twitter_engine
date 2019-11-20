@@ -1,18 +1,33 @@
 defmodule TwitterengineTest do
   use ExUnit.Case, async: true
-  doctest Twitterengine
 
   setup do
-    tweeter_server = start_supervised!(TwitterEngine.Server)
-    %{server: tweeter_server}
+    server_pid = start_supervised!({TwitterEngine.Server,["abc"]})
+    client_pid = start_supervised!({TwitterEngine.Client,{1,2,2}})
+    %{server: server_pid,client: client_pid}
   end
 
-  test "Let's check registration", %{server: tweeter_server} do
-    assert :ets.lookup(:tab_user, "client_1") == []
+  test "Registration", %{server: server_pid,client: client_pid} do
+    assert [] =:ets.lookup(:tab_user, 1)
 
-    Genserver.cast(:client_1, {:register})
-    assert [{"1", [], [], "connected", []}] = :ets.lookup(:tab_user, "client_1")
-    
+    GenServer.call(client_pid,{:register,server_pid})
+    assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
   end
+
+  test "De-Registration", %{server: server_pid,client: client_pid} do
+    GenServer.call(client_pid,{:register,server_pid})
+    assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
+
+    GenServer.call(client_pid,{:deRegister,server_pid})
+    assert [] =:ets.lookup(:tab_user, 1)
+  end
+
+  test "Tweet", %{server: server_pid,client: client_pid} do
+    GenServer.call(client_pid,{:register,server_pid})
+    tweetId = GenServer.call(client_pid,{:tweet,server_pid,["foo", "bar"]})
+    contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
+    assert  contains=true
+  end
+
 
 end
