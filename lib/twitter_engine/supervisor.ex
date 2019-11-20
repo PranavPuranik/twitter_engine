@@ -7,15 +7,14 @@ defmodule ApplicationSupervisor do
 
     def init([clients, messages]) do
       children = [
-        worker(TwitterEngine.Server, ['sbc'], restart: :temporary) | 
+        worker(TwitterEngine.Server, ['abc'], [id: "server"]) | 
         Enum.map(1..clients, fn n -> 
-          worker(TwitterEngine.Client, [n, messages, clients], restart: :temporary) 
+          worker(TwitterEngine.Client, [n, messages, clients], [id: "worker_client_#{n}"] ) 
         end)
       ]
-      IO.inspect children
-      IO.puts "------------------------"
+      #IO.inspect children
+      #IO.puts "------------------------"
       Supervisor.start_link(children, strategy: :one_for_one)
-
     end
 
 end

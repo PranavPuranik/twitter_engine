@@ -8,12 +8,16 @@ defmodule TwitterEngine.Server do
     def init({clientnode}) do
         # state:
         # ets tables
+        # IO.puts "Server Started"
+        # IO.puts "-------------------------------"
         :ets.new(:tab_user, [:set, :protected, :named_table])
         :ets.new(:tab_tweet, [:set, :protected, :named_table])
         :ets.new(:tab_msgq, [:set, :protected, :named_table])
         :ets.new(:tab_hashtag, [:set, :protected, :named_table])
         :ets.new(:tab_mentions, [:set, :protected, :named_table])
-         {:ok, {clientnode}}
+        {:ok, {clientnode}}
+
+
     end
 
 
