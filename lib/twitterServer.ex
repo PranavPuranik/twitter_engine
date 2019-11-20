@@ -31,18 +31,18 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
-    def handle_call({:registerUser,x},_from,{clientnode}) do
+    def handle_cast({:registerUser,x},{clientnode}) do
         #update table (add a new user x)
         :ets.insert_new(:tab_user, {x, [], [], "connected",0})
         #GenServer.cast({:orc,clientnode},{:registered})
-        {:reply,[],{clientnode}}
+        {:noreply,{clientnode}}
     end
 
-    def handle_call({:deRegisterUser,x},_from,{clientnode}) do
+    def handle_cast({:deRegisterUser,x},{clientnode}) do
         #update table (add a new user x)
         :ets.delete(:tab_user,x)
         #GenServer.cast({:orc,clientnode},{:registered})
-        {:reply,[],{clientnode}}
+        {:noreply,{clientnode}}
     end
 
     def handle_cast({:reconnection,x},{clientnode})do

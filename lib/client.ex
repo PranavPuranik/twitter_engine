@@ -11,14 +11,14 @@ defmodule TwitterEngine.Client do
     {:ok, {id, messages, clients}}
   end
 
-  def handle_call({:register,server_pid}, _from,{id, messages, clients}) do
-    GenServer.call(server_pid,{:registerUser,id})
-    {:reply,[], {id, messages, clients}}
+  def handle_cast({:register,server_pid},{id, messages, clients}) do
+    GenServer.cast(server_pid,{:registerUser,id})
+    {:noreply, {id, messages, clients}}
   end
 
-  def handle_call({:deRegister,server_pid}, _from,{id, messages, clients}) do
-    GenServer.call(server_pid,{:deRegisterUser,id})
-    {:reply,[], {id, messages, clients}}
+  def handle_cast({:deRegister,server_pid},{id, messages, clients}) do
+    GenServer.cast(server_pid,{:deRegisterUser,id})
+    {:noreply, {id, messages, clients}}
   end
 
   def handle_call({:tweet,server_pid,tweet_pool}, _from,{id, messages, clients}) do
