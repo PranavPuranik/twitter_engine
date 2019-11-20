@@ -16,10 +16,7 @@ defmodule TwitterEngine.Server do
         :ets.new(:tab_hashtag, [:set, :protected, :named_table])
         :ets.new(:tab_mentions, [:set, :protected, :named_table])
         {:ok, {clientnode}}
-
-
     end
-
 
     def handle_call({:simulator_add,address},_,{_}) do
          clientnode = address
@@ -34,13 +31,18 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
-    def handle_cast({:registeruser,x},{clientnode}) do
+    def handle_call({:registerUser,x},_from,{clientnode}) do
         #update table (add a new user x)
-        IO.puts("Registering user #{x}")
-
         :ets.insert_new(:tab_user, {x, [], [], "connected",0})
-        GenServer.cast({:orc,clientnode},{:registered})
-        {:noreply,{clientnode}}
+        #GenServer.cast({:orc,clientnode},{:registered})
+        {:reply,[],{clientnode}}
+    end
+
+    def handle_call({:deRegisterUser,x},_from,{clientnode}) do
+        #update table (add a new user x)
+        :ets.delete(:tab_user,x)
+        #GenServer.cast({:orc,clientnode},{:registered})
+        {:reply,[],{clientnode}}
     end
 
     def handle_call({:register, id}, _from, {clientnode}) do
@@ -50,8 +52,6 @@ defmodule TwitterEngine.Server do
         {:reply, [], {clientnode}}
     
     end
-
-
 
     def handle_cast({:reconnection,x},{clientnode})do
         :ets.update_element(:tab_user,x,{4, "connected"})
@@ -75,7 +75,7 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
-    def handle_cast({:tweet,x,msg},{clientnode})do
+    def handle_call({:tweet,x,msg},_from,{clientnode})do
         #update tweet counter
         [{_,_,followers_list,_,old_count}] = :ets.lookup(:tab_user, x)
         :ets.update_element(:tab_user, x, {5, old_count+1})
@@ -87,8 +87,7 @@ defmodule TwitterEngine.Server do
         mentions_update(tweetid,msg)
         #cast message to all subscribers of x if ALIVE
         Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode) end)
-
-        {:noreply,{clientnode}}
+        {:reply,tweetid,{clientnode}}
     end
 
     def handle_cast({:hashtags,x,hashtag},{clientnode})do

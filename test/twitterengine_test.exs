@@ -1,40 +1,33 @@
 defmodule TwitterengineTest do
   use ExUnit.Case, async: true
-  
 
   setup do
-    #tweeter_server = start_supervised!(TwitterEngine.Server)
-    #tweeter_client_1 = start_supervised!(TwitterEngine.Client, [1, 2, 2])
-    # children = [
-    #   worker(TwitterEngine.Server, ['abc'], id: "server") | 
-    #   Enum.map(1..clients, fn n -> 
-    #     worker(TwitterEngine.Client, [n, messages, clients], id: "worker_client_#{n}" ) 
-    #   end)
-    # ]
-    # tweeter_server = start_supervised(TwitterEngine.Server)
-    # tweeter_client = start_supervised({TwitterEngine.Client, [1, 2, 2]})
-
-    {:ok, tweeter_server} = start_supervised(TwitterEngine.Server)
-    {:ok, tweeter_client} = start_supervised({TwitterEngine.Client, {1, 2, 2}})
-
-    #tweeter_server = start_supervised!(children)
-    %{server: tweeter_server, client: tweeter_client}
-    #%{everything: tweeter_server}
+    server_pid = start_supervised!({TwitterEngine.Server,["abc"]})
+    client_pid = start_supervised!({TwitterEngine.Client,{1,2,2}})
+    %{server: server_pid,client: client_pid}
   end
 
-  test "Let's check registration", %{server: tweeter_server, client: tweeter_client} do
-    assert :ets.lookup(:tab_user, 1) == []
+  test "Registration", %{server: server_pid,client: client_pid} do
+    assert [] =:ets.lookup(:tab_user, 1)
 
-    IO.inspect tweeter_client
-
-    _ = GenServer.call(:client_1, {:register})
-
-
-
-    #tweeter_client.register_self()
-    #IO.inspect tweeter_client
-    assert [{1, [], [], "connected", []}] = :ets.lookup(:tab_user, 1)
-    
+    GenServer.call(client_pid,{:register,server_pid})
+    assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
   end
+
+  test "De-Registration", %{server: server_pid,client: client_pid} do
+    GenServer.call(client_pid,{:register,server_pid})
+    assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
+
+    GenServer.call(client_pid,{:deRegister,server_pid})
+    assert [] =:ets.lookup(:tab_user, 1)
+  end
+
+  test "Tweet", %{server: server_pid,client: client_pid} do
+    GenServer.call(client_pid,{:register,server_pid})
+    tweetId = GenServer.call(client_pid,{:tweet,server_pid,["foo", "bar"]})
+    contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
+    assert  contains=true
+  end
+
 
 end
