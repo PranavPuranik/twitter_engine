@@ -1,8 +1,8 @@
-defmodule TwitterServer do
+defmodule TwitterEngine.Server do
     use GenServer
 
     def start_link(clientnode) do
-        GenServer.start_link(__MODULE__, {clientnode}, name: String.to_atom("server"))
+        GenServer.start_link(__MODULE__, {clientnode}, name: String.to_atom("twitterServer"))
     end
 
     def init({clientnode}) do
@@ -15,6 +15,7 @@ defmodule TwitterServer do
         :ets.new(:tab_mentions, [:set, :protected, :named_table])
          {:ok, {clientnode}}
     end
+
 
     def handle_call({:simulator_add,address},_,{_}) do
          clientnode = address
