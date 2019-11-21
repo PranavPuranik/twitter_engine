@@ -129,32 +129,39 @@ defmodule TwitterengineTest do
   end
 
   #====================  RETWEET AND SUBSCRIBED USER RECEIVING MESSAGE TESTING =========================#
- # test "Retweet and Subscribed user receiving message",  %{server: server_pid,clients: clients} do
- #   GenServer.cast(Enum.at(clients,0),{:register,server_pid})
- #   GenServer.cast(Enum.at(clients,11),{:register,server_pid})
- #
- #   #assert []=:ets.tab2list(:tab_tweet)
- #
- #   :sys.get_state(Enum.at(clients,0))
- #   :sys.get_state(Enum.at(clients,1))
- #   :sys.get_state(server_pid)
- #
- #   GenServer.cast(Enum.at(clients,0),{:subscribe, server_pid, [2]})
- #
- #   #IO.inspect Process.alive?(Enum.at(clients,1))
- #   :sys.get_state(Enum.at(clients,0))
- #   :sys.get_state(Enum.at(clients,1))
- #   :sys.get_state(server_pid)
- #
- #   tweetId = GenServer.call(Enum.at(clients,1),{:tweet,server_pid,["foo", "bar"], 1})
- #
- #   IO.inspect :ets.match_object(:tab_tweet, {:"_", 2, :"_"})
- #
- #
- #
- #   #contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
- #   assert  contains=true
- # end
+  test "Retweet and Subscribed user receiving message",  %{server: server_pid,clients: clients} do
+   GenServer.cast(Enum.at(clients,0),{:register})
+   GenServer.cast(Enum.at(clients,1),{:register})
+
+   #assert []=:ets.tab2list(:tab_tweet)
+
+   :sys.get_state(Enum.at(clients,0))
+   :sys.get_state(Enum.at(clients,1))
+   :sys.get_state(server_pid)
+
+   GenServer.cast(Enum.at(clients,0),{:subscribe, [2]})
+
+   #IO.inspect Process.alive?(Enum.at(clients,1))
+   :sys.get_state(Enum.at(clients,0))
+   :sys.get_state(Enum.at(clients,1))
+   :sys.get_state(server_pid)
+
+   tweetId = GenServer.call(Enum.at(clients,1),{:tweet,["foo", "bar"], 1})
+
+   :sys.get_state(Enum.at(clients,0))
+   :sys.get_state(Enum.at(clients,1))
+   :sys.get_state(server_pid)
+
+   #IO.inspect :ets.match_object(:tab_tweet, {:"_", 2, :"_"})
+   #IO.inspect :ets.match_object(:tab_tweet, {:"_", 1, :"_"})
+
+   { _, _, client1_retweet} = Enum.at(:ets.match_object(:tab_tweet, {:"_", 1, :"_"}),0)
+   { _, _, client2_tweet} = Enum.at(:ets.match_object(:tab_tweet, {:"_", 2, :"_"}),0)
+   
+   #IO.inspect String.slice(client1_retweet,0..-28)
+   #contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
+   assert  client2_tweet == String.slice(client1_retweet,0..-28)
+  end
 
 
 
