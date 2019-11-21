@@ -1,7 +1,6 @@
 defmodule TwitterEngine.Client do
   use GenServer
 
-
   # Initialization
   def start_link({id, messages, clients}) do
     GenServer.start_link(__MODULE__, {id, messages, clients}, name: String.to_atom("client_#{id}"))

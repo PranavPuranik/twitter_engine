@@ -182,5 +182,4 @@ defmodule TwitterengineTest do
     assert ["#tweet from 2"] = GenServer.call(Enum.at(clients,0),{:allSubscribedTweets,server_pid})
 	end
 
-
 end
