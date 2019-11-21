@@ -42,4 +42,10 @@ defmodule TwitterEngine.Client do
     {:noreply, {id, messages, clients}}
   end
 
+  def handle_call({:allSubscribedTweets,server_pid},{id, messages, clients})do
+    GenServer.call(server_pid,{:allSubscribedTweets,id})
+    {:noreply, {id, messages, clients}}
+  end
+
+
 end

@@ -86,7 +86,7 @@ defmodule TwitterengineTest do
     assert ["@AlinDobra is #hero","@pranav is #hero"] == GenServer.call(Enum.at(clients,0),{:queryHashTags,server_pid,"#hero"})
   end
 
-  #====================  QUERY TEST WITH MY MENTIONS =========================#
+  #====================  QUERY TWEETS WITH MY MENTIONS =========================#
   test "Query-tweets with specific mentions", %{server: server_pid,clients: clients} do
     GenServer.cast(Enum.at(clients,0),{:register,server_pid})
     :sys.get_state(Enum.at(clients,0))
@@ -99,6 +99,7 @@ defmodule TwitterengineTest do
     GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #great"]})
     assert  [clientName<>" is #hero",clientName<>" is #champion"] == GenServer.call(Enum.at(clients,0),{:queryMyMention,server_pid,clientName})
   end
+
 
   #====================  SUBSCRIBER TESTING =========================#
   test "Subscribe",  %{server: server_pid,clients: clients} do
@@ -131,5 +132,28 @@ defmodule TwitterengineTest do
     assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
 
   end
+
+  #====================  QUERY TWEETS SUBSCRIBED TO =========================#
+  test "Query-tweets subscribed to", %{server: server_pid,clients: clients} do
+    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,1),{:register,server_pid})
+    :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(Enum.at(clients,1))
+    :sys.get_state(server_pid)
+
+    GenServer.cast(Enum.at(clients,0),{:subscribe, server_pid, [2]})
+    :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(Enum.at(clients,1))
+    :sys.get_state(server_pid)
+
+    #adding to subscriber list
+    assert [{1, [2], [], "connected", 0}] = :ets.lookup(:tab_user, 1)
+    #adding to follower list
+    assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
+
+    #Atom.to_string(elem(:erlang.process_info(Enum.at(clients,0),:registered_name),1))
+    GenServer.call(Enum.at(clients,1),{:tweet,server_pid,["#tweet from 2"]})
+    GenServer.call(Enum.at(clients,0),{:allSubscribedTweets,server_pid})
+    end
 
 end

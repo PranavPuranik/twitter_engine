@@ -106,6 +106,13 @@ defmodule TwitterEngine.Server do
       {:reply,tweetsWithMyMentions, {clientnode}}
     end
 
+    def handle_call({:allSubscribedTweets,id},_from,{clientnode}) do
+      tweets = Enum.map elem(:ets.lookup(:tab_user, id),1),fn x->
+        IO.inspect :ets.match(:tab_tweet,{:"_",x,:"_"})
+      end
+      {:reply,[], {clientnode}}
+    end
+
     def handle_cast({:all_completed},{clientnode}) do
         IO.puts "Exiting."
         GenServer.cast({:orc,clientnode},{:time})
