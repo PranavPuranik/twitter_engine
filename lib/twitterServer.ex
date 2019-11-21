@@ -130,7 +130,7 @@ defmodule TwitterEngine.Server do
         status = :ets.lookup_element(:tab_user,follower,4)
         if status == "connected" do
             if retweet_testing == 0 do
-                GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 0, server_pid})    
+                GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 0, server_pid})
             else
                 GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 1, server_pid})
             end
