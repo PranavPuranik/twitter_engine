@@ -27,8 +27,18 @@ defmodule TwitterEngine.Client do
     {:reply,tweetId, {id, messages, clients}}
   end
 
+  def handle_call({:queryHashTags,server_pid,hashTag},_from,{id, messages, clients}) do
+    tweets = GenServer.call(server_pid,{:queryHashTags,hashTag})
+    {:reply,tweets, {id, messages, clients}}
+  end
+
+  def handle_call({:queryMyMention,server_pid,mention},_from,{id, messages, clients}) do
+    tweets = GenServer.call(server_pid,{:queryMyMention,mention})
+    {:reply,tweets, {id, messages, clients}}
+  end
+
   def handle_cast({:subscribe, server_pid, subscribe_to},{id, messages, clients})do
-    GenServer.cast(server_pid,{:subscribe,id,subscribe_to}) 
+    GenServer.cast(server_pid,{:subscribe,id,subscribe_to})
     {:noreply, {id, messages, clients}}
   end
 
