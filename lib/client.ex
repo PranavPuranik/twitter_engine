@@ -21,9 +21,13 @@ defmodule TwitterEngine.Client do
     {:noreply, {id, messages, clients}}
   end
 
-  def handle_call({:tweet,server_pid,tweet_pool}, _from,{id, messages, clients}) do
+  def handle_call({:tweet,server_pid,tweet_pool, retweet_testing}, _from,{id, messages, clients}) do
     msg = Enum.random(tweet_pool)
-    tweetId = GenServer.call(server_pid,{:tweet,id,msg})
+    tweetId = if retweet_testing == 0 do
+      GenServer.call(server_pid,{:tweet, server_pid,id,msg, 0})
+    else
+      GenServer.call(server_pid,{:tweet, server_pid,id,msg, retweet_testing})
+    end
     {:reply,tweetId, {id, messages, clients}}
   end
 
@@ -45,6 +49,25 @@ defmodule TwitterEngine.Client do
   def handle_call({:allSubscribedTweets,server_pid},{id, messages, clients})do
     GenServer.call(server_pid,{:allSubscribedTweets,id})
     {:noreply, {id, messages, clients}}
+
+
+  def handle_cast({:on_the_feed, server_pid, tweet_by,message, chance},{id, messages, clients})do
+    #IO.puts "user#{id} received a tweet from user#{source}:: #{msg}"
+    chance =  if chance != 1 do
+                100
+              else
+                1
+              end
+    if (:rand.uniform(chance) == 1) do
+      retweet =   if (Regex.match?(~r/Retweeted/ , message)) do
+                      message
+                  else
+                      message <> " - Retweeted source #{tweet_by}."
+                  end
+      #IO.puts "Retweeting: "<>rt_msg
+      tweetId = GenServer.call(server_pid,{:tweet,id,message})
+    end
+    {:noreply,{id, messages, clients}}
   end
 
 

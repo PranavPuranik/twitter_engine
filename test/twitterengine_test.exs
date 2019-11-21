@@ -43,7 +43,7 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients,0),{:register,server_pid})
     assert []=:ets.tab2list(:tab_tweet)
 
-    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["foo", "bar"]})
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["foo", "bar"], 0})
     contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
     assert  contains=true
   end
@@ -55,7 +55,7 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#COP5615 is #great"]})
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#COP5615 is #great"], 0})
     assert [{"#COP5615", _}] = :ets.lookup(:tab_hashtag, "#COP5615")
     assert [{"#great", _}] = :ets.lookup(:tab_hashtag, "#great")
   end
@@ -67,7 +67,7 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is @hero"]})
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is @hero"], 0})
     #IO.inspect :ets.tab2list(:tab_mentions)
     assert [{"@pranav", _}] = :ets.lookup(:tab_mentions, "@pranav")
     assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
@@ -133,20 +133,32 @@ defmodule TwitterengineTest do
 
   end
 
+  #====================  RETWEET AND SUBSCRIBED USER RECEIVING MESSAGE TESTING =========================#
+  test "Retweet and Subscribed user receiving message",  %{server: server_pid,clients: clients} do
+    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,1),{:register,server_pid})
+
+    tweetId = GenServer.call(Enum.at(clients,1),{:tweet,server_pid,["foo", "bar"], 1})
+
+    #contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
+    assert  contains=true
+  end
+
+
   #====================  QUERY TWEETS SUBSCRIBED TO =========================#
   test "Query-tweets subscribed to", %{server: server_pid,clients: clients} do
     GenServer.cast(Enum.at(clients,0),{:register,server_pid})
     GenServer.cast(Enum.at(clients,1),{:register,server_pid})
-    :sys.get_state(Enum.at(clients,0))
+	:sys.get_state(Enum.at(clients,0))
     :sys.get_state(Enum.at(clients,1))
     :sys.get_state(server_pid)
 
     GenServer.cast(Enum.at(clients,0),{:subscribe, server_pid, [2]})
-    :sys.get_state(Enum.at(clients,0))
+	:sys.get_state(Enum.at(clients,0))
     :sys.get_state(Enum.at(clients,1))
     :sys.get_state(server_pid)
 
-    #adding to subscriber list
+	#adding to subscriber list
     assert [{1, [2], [], "connected", 0}] = :ets.lookup(:tab_user, 1)
     #adding to follower list
     assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
@@ -154,6 +166,8 @@ defmodule TwitterengineTest do
     #Atom.to_string(elem(:erlang.process_info(Enum.at(clients,0),:registered_name),1))
     GenServer.call(Enum.at(clients,1),{:tweet,server_pid,["#tweet from 2"]})
     GenServer.call(Enum.at(clients,0),{:allSubscribedTweets,server_pid})
-    end
+	IO.inspect :ets.match_object(:tab_tweet, {:"_", 2, :"_"})
+	end
+
 
 end
