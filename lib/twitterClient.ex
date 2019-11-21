@@ -10,47 +10,47 @@ defmodule TwitterEngine.Client do
     {:ok, {id, messages, clients}}
   end
 
-  def handle_cast({:register,server_pid},{id, messages, clients}) do
-    GenServer.cast(server_pid,{:registerUser,id})
+  def handle_cast({:register},{id, messages, clients}) do
+    GenServer.cast(:twitterServer,{:registerUser,id})
     {:noreply, {id, messages, clients}}
   end
 
-  def handle_cast({:deRegister,server_pid},{id, messages, clients}) do
-    GenServer.cast(server_pid,{:deRegisterUser,id})
+  def handle_cast({:deRegister},{id, messages, clients}) do
+    GenServer.cast(:twitterServer,{:deRegisterUser,id})
     {:noreply, {id, messages, clients}}
   end
 
-  def handle_call({:tweet,server_pid,tweet_pool, retweet_testing}, _from,{id, messages, clients}) do
+  def handle_call({:tweet,tweet_pool, retweet_testing}, _from,{id, messages, clients}) do
     msg = Enum.random(tweet_pool)
     tweetId = if retweet_testing == 0 do
-      GenServer.call(server_pid,{:tweet, server_pid,id,msg, 0})
+      GenServer.call(:twitterServer,{:tweet,id,msg, 0})
     else
-      GenServer.call(server_pid,{:tweet, server_pid,id,msg, retweet_testing})
+      GenServer.call(:twitterServer,{:tweet,id,msg, retweet_testing})
     end
     {:reply,tweetId, {id, messages, clients}}
   end
 
-  def handle_call({:queryHashTags,server_pid,hashTag},_from,{id, messages, clients}) do
-    tweets = GenServer.call(server_pid,{:queryHashTags,hashTag})
+  def handle_call({:queryHashTags,hashTag},_from,{id, messages, clients}) do
+    tweets = GenServer.call(:twitterServer,{:queryHashTags,hashTag})
     {:reply,tweets, {id, messages, clients}}
   end
 
-  def handle_call({:queryMyMention,server_pid,mention},_from,{id, messages, clients}) do
-    tweets = GenServer.call(server_pid,{:queryMyMention,mention})
+  def handle_call({:queryMyMention,mention},_from,{id, messages, clients}) do
+    tweets = GenServer.call(:twitterServer,{:queryMyMention,mention})
     {:reply,tweets, {id, messages, clients}}
   end
 
-  def handle_cast({:subscribe, server_pid, subscribe_to},{id, messages, clients})do
-    GenServer.cast(server_pid,{:subscribe,id,subscribe_to})
+  def handle_cast({:subscribe, subscribe_to},{id, messages, clients})do
+    GenServer.cast(:twitterServer,{:subscribe,id,subscribe_to})
     {:noreply, {id, messages, clients}}
   end
 
-  def handle_call({:allSubscribedTweets,server_pid},_from,{id, messages, clients})do
-    tweets = GenServer.call(server_pid,{:allSubscribedTweets,id})
+  def handle_call({:allSubscribedTweets},_from,{id, messages, clients})do
+    tweets = GenServer.call(:twitterServer,{:allSubscribedTweets,id})
     {:reply, tweets,{id, messages, clients}}
   end
 
-  def handle_cast({:on_the_feed, server_pid, tweet_by,message, chance},{id, messages, clients})do
+  def handle_cast({:on_the_feed, tweet_by,message, chance},{id, messages, clients})do
     #IO.puts "user#{id} received a tweet from user#{source}:: #{msg}"
     chance =  if chance != 1 do
                 100
@@ -64,7 +64,7 @@ defmodule TwitterEngine.Client do
                       message <> " - Retweeted source #{tweet_by}."
                   end
       #IO.puts "Retweeting: "<>rt_msg
-      tweetId = GenServer.call(server_pid,{:tweet,id,message})
+      tweetId = GenServer.call(:twitterServer,{:tweet,id,message})
     end
     {:noreply,{id, messages, clients}}
   end

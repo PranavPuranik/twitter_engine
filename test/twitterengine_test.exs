@@ -2,7 +2,7 @@ defmodule TwitterengineTest do
   use ExUnit.Case, async: true
 
   setup do
-    server_pid = start_supervised!({TwitterEngine.Server,["abc"]})
+    server_pid = start_supervised!({TwitterEngine.Server,{"twitterServer"}})
     client_1_pid = start_supervised!({TwitterEngine.Client,{1,2,2}}, id: "client_1")
     client_2_pid = start_supervised!({TwitterEngine.Client,{2,2,2}}, id: "client_2")
     clients = [client_1_pid, client_2_pid]
@@ -15,7 +15,7 @@ defmodule TwitterengineTest do
 
     assert [] = :ets.lookup(:tab_user, 1)
 
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     #IO.inspect :ets.lookup(:tab_user, 1)
@@ -26,12 +26,12 @@ defmodule TwitterengineTest do
 
   #====================  DELETE ACCOUNT TESTING =========================#
   test "De-Registration", %{server: server_pid,clients: clients} do
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
 
-    GenServer.cast(Enum.at(clients,0),{:deRegister,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:deRegister})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert [] =:ets.lookup(:tab_user, 1)
@@ -40,34 +40,34 @@ defmodule TwitterengineTest do
 
   #====================  TWEET TESTING =========================#
   test "Tweet", %{server: server_pid,clients: clients} do
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
     assert []=:ets.tab2list(:tab_tweet)
 
-    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["foo", "bar"], 0})
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,["foo", "bar"], 0})
     contains = Enum.member?(["foo", "bar"],:ets.lookup(:tab_tweet, tweetId))
     assert  contains=true
   end
 
   #====================  HASHTAG TESTING =========================#
   test "DoubleHashTag", %{server: server_pid,clients: clients} do
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#COP5615 is #great"], 0})
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,["#COP5615 is #great"], 0})
     assert [{"#COP5615", _}] = :ets.lookup(:tab_hashtag, "#COP5615")
     assert [{"#great", _}] = :ets.lookup(:tab_hashtag, "#great")
   end
 
  #====================  MENTIONS TESTING =========================#
   test "DoubleMentions", %{server: server_pid,clients: clients} do
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is @hero"], 0})
+    tweetId = GenServer.call(Enum.at(clients,0),{:tweet,["@pranav is @hero"], 0})
     #IO.inspect :ets.tab2list(:tab_mentions)
     assert [{"@pranav", _}] = :ets.lookup(:tab_mentions, "@pranav")
     assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
@@ -75,29 +75,29 @@ defmodule TwitterengineTest do
 
   #====================  QUERY TWEETS WITH HASHTAG TESTING =========================#
   test "Query-tweets with specific hashtags", %{server: server_pid,clients: clients} do
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"],0})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #hero"],0})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#DOS is #great"],0})
-    assert ["@AlinDobra is #hero","@pranav is #hero"] == GenServer.call(Enum.at(clients,0),{:queryHashTags,server_pid,"#hero"})
+    GenServer.call(Enum.at(clients,0),{:tweet,["@pranav is #hero"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,["@AlinDobra is #hero"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,["#DOS is #great"],0})
+    assert ["@AlinDobra is #hero","@pranav is #hero"] == GenServer.call(Enum.at(clients,0),{:queryHashTags,"#hero"})
   end
 
   #====================  QUERY TWEETS WITH MY MENTIONS =========================#
   test "Query-tweets with my mentions", %{server: server_pid,clients: clients} do
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_mentions)
 
     clientName = "@"<>Atom.to_string(elem(:erlang.process_info(Enum.at(clients,0),:registered_name),1))
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #champion"],0})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #hero"],0})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #great"],0})
-    assert  [clientName<>" is #hero",clientName<>" is #champion"] == GenServer.call(Enum.at(clients,0),{:queryMyMention,server_pid,clientName})
+    GenServer.call(Enum.at(clients,0),{:tweet,[clientName<>" is #champion"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,[clientName<>" is #hero"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,["@AlinDobra is #great"],0})
+    assert  [clientName<>" is #hero",clientName<>" is #champion"] == GenServer.call(Enum.at(clients,0),{:queryMyMention,clientName})
   end
 
 
@@ -107,14 +107,14 @@ defmodule TwitterengineTest do
     assert [] = :ets.lookup(:tab_user, 1)
     assert [] = :ets.lookup(:tab_user, 2)
 
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
-    GenServer.cast(Enum.at(clients,1),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
+    GenServer.cast(Enum.at(clients,1),{:register})
 
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(Enum.at(clients,1))
     :sys.get_state(server_pid)
 
-    GenServer.cast(Enum.at(clients,0),{:subscribe, server_pid, [2]})
+    GenServer.cast(Enum.at(clients,0),{:subscribe, [2]})
 
     #IO.inspect Process.alive?(Enum.at(clients,1))
     :sys.get_state(Enum.at(clients,0))
@@ -160,13 +160,13 @@ defmodule TwitterengineTest do
 
   #====================  QUERY TWEETS SUBSCRIBED TO =========================#
   test "Query-tweets subscribed to", %{server: server_pid,clients: clients} do
-    GenServer.cast(Enum.at(clients,0),{:register,server_pid})
-    GenServer.cast(Enum.at(clients,1),{:register,server_pid})
+    GenServer.cast(Enum.at(clients,0),{:register})
+    GenServer.cast(Enum.at(clients,1),{:register})
 	  :sys.get_state(Enum.at(clients,0))
     :sys.get_state(Enum.at(clients,1))
     :sys.get_state(server_pid)
 
-    GenServer.cast(Enum.at(clients,0),{:subscribe, server_pid, [2]})
+    GenServer.cast(Enum.at(clients,0),{:subscribe, [2]})
 	  :sys.get_state(Enum.at(clients,0))
     :sys.get_state(Enum.at(clients,1))
     :sys.get_state(server_pid)
@@ -177,9 +177,9 @@ defmodule TwitterengineTest do
     assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
 
     #Atom.to_string(elem(:erlang.process_info(Enum.at(clients,0),:registered_name),1))
-    GenServer.call(Enum.at(clients,1),{:tweet,server_pid,["#tweet from 2"],0})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#tweet from 1"],0})
-    assert ["#tweet from 2"] = GenServer.call(Enum.at(clients,0),{:allSubscribedTweets,server_pid})
+    GenServer.call(Enum.at(clients,1),{:tweet,["#tweet from 2"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,["#tweet from 1"],0})
+    assert ["#tweet from 2"] = GenServer.call(Enum.at(clients,0),{:allSubscribedTweets})
 	end
 
 end

@@ -1,8 +1,8 @@
 defmodule TwitterEngine.Server do
     use GenServer
 
-    def start_link(clientnode) do
-        GenServer.start_link(__MODULE__, {clientnode}, name: String.to_atom("twitterServer"))
+    def start_link({name}) do
+        GenServer.start_link(__MODULE__, {"clientnode"}, name: String.to_atom(name))
     end
 
     def init({clientnode}) do
@@ -73,7 +73,7 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
-    def handle_call({:tweet, server_pid,x,msg, retweet_testing},_from,{clientnode})do
+    def handle_call({:tweet,x,msg, retweet_testing},_from,{clientnode})do
         #update tweet counter
         [{_,_,followers_list,_,old_count}] = :ets.lookup(:tab_user, x)
         :ets.update_element(:tab_user, x, {5, old_count+1})
@@ -85,9 +85,9 @@ defmodule TwitterEngine.Server do
         mentions_update(tweetid,msg)
         #cast message to all subscribers of x if ALIVE
         if retweet_testing == 0 do
-            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 0, server_pid) end)
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 0) end)
         else
-            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 1, server_pid) end)
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 1) end)
         end
         {:reply,tweetid,{clientnode}}
     end
@@ -122,13 +122,13 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
-    def send_if_alive(follower,sender,msg,tweetid,clientnode, retweet_testing, server_pid) do
+    def send_if_alive(follower,sender,msg,tweetid,clientnode, retweet_testing) do
         status = :ets.lookup_element(:tab_user,follower,4)
         if status == "connected" do
             if retweet_testing == 0 do
-                #GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 0, server_pid})
+                #GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 0})
             else
-                #GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 1, server_pid})
+                #GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 1})
             end
         else
             old_msgq = :ets.lookup_element(:tab_msgq,follower,2)
