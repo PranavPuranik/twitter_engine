@@ -8,8 +8,8 @@ defmodule TwitterEngine.Server do
     def init({clientnode}) do
         # state:
         # ets tables
-        # IO.puts "Server Started"
-        # IO.puts "-------------------------------"
+        #IO.puts "Server Started"
+        #IO.puts "-------------------------------"
         :ets.new(:tab_user, [:set, :protected, :named_table])
         :ets.new(:tab_tweet, [:set, :protected, :named_table])
         :ets.new(:tab_msgq, [:set, :protected, :named_table])
@@ -45,6 +45,14 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
+    def handle_call({:register, id}, _from, {clientnode}) do
+        IO.puts("Registering user #{id}")
+        :ets.insert_new(:tab_user, {id, [], [], "connected",0})
+        GenServer.cast({:orc,clientnode},{:registered})
+        {:reply, [], {clientnode}}
+    
+    end
+
     def handle_cast({:reconnection,x},{clientnode})do
         :ets.update_element(:tab_user,x,{4, "connected"})
         [{_,tweetlist}]=:ets.lookup(:tab_msgq,x)
@@ -57,12 +65,22 @@ defmodule TwitterEngine.Server do
     def handle_cast({:subscribe,x,subscribe_to},{clientnode})do
         #update table (add subscribe to for user x)
         [{_,old_list,_,_,_}] = :ets.lookup(:tab_user, x)
-        subscribe_to = Enum.uniq(subscribe_to) -- [x]
+
+        #subscribe_to = Enum.uniq(subscribe_to) -- [x]
         #IO.puts "user#{x} is now following #{Enum.at(subscribe_to,0)}, #{Enum.at(subscribe_to,1)}"
         new_list = Enum.uniq(old_list++subscribe_to)
         :ets.update_element(:tab_user, x, {2, new_list})
+        
+        IO.inspect x
+        IO.inspect subscribe_to
+        IO.inspect :ets.lookup(:tab_user, x)
+
         #update table (add x to followers list)
-        Enum.map(subscribe_to, fn(y)->:ets.update_element(:tab_user, y, {3, [x]++List.flatten(:ets.match(:tab_user, {y,:"_",:"$1",:"_"}))})end)
+        Enum.map(subscribe_to, fn(y)->
+            :ets.update_element(:tab_user, y, 
+                {3, [x]++List.flatten(:ets.match(:tab_user, {y,:"_",:"$1",:"_"}))}
+            )
+        end)
         #IO.inspect :ets.select(:tab_user, [{{:"$1", :"$2", :"$3",:"$4"}, [], [:"$_"]}])
         {:noreply,{clientnode}}
     end

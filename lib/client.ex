@@ -27,4 +27,9 @@ defmodule TwitterEngine.Client do
     {:reply,tweetId, {id, messages, clients}}
   end
 
+  def handle_cast({:subscribe, server_pid, subscribe_to},{id, messages, clients})do
+    GenServer.cast(server_pid,{:subscribe,id,subscribe_to}) 
+    {:noreply, {id, messages, clients}}
+  end
+
 end
