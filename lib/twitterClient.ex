@@ -1,7 +1,6 @@
 defmodule TwitterEngine.Client do
   use GenServer
 
-
   # Initialization
   def start_link({id, messages, clients}) do
     GenServer.start_link(__MODULE__, {id, messages, clients}, name: String.to_atom("client_#{id}"))
@@ -46,16 +45,10 @@ defmodule TwitterEngine.Client do
     {:noreply, {id, messages, clients}}
   end
 
-  # def handle_cast({:retweet, server_pid, tweet_by, message},{id, messages, clients}) do
-  #   retweet =  if (Regex.match?(~r/Retweeted.$/ , msg)) do
-  #                 msg
-  #             else
-  #                 msg <> " - Retweeted by #{id} from #{tweet_by}."
-  #             end
-  #   tweetId = GenServer.call(server_pid,{:tweet,id,msg})
-  #   GenServer.call(server_pid,{:tweet,x,retweet})
-  #   {:noreply, {id, messages, clients}}   
-  # end
+  def handle_call({:allSubscribedTweets,server_pid},_from,{id, messages, clients})do
+    tweets = GenServer.call(server_pid,{:allSubscribedTweets,id})
+    {:reply, tweets,{id, messages, clients}}
+  end
 
   def handle_cast({:on_the_feed, server_pid, tweet_by,message, chance},{id, messages, clients})do
     #IO.puts "user#{id} received a tweet from user#{source}:: #{msg}"
