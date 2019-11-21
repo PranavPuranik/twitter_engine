@@ -85,7 +85,7 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
-    def handle_call({:tweet,x,msg},_from,{clientnode})do
+    def handle_call({:tweet, server_pid,x,msg, retweet_testing},_from,{clientnode})do
         #update tweet counter
         [{_,_,followers_list,_,old_count}] = :ets.lookup(:tab_user, x)
         :ets.update_element(:tab_user, x, {5, old_count+1})
@@ -96,7 +96,11 @@ defmodule TwitterEngine.Server do
         hashtag_update(tweetid,msg)
         mentions_update(tweetid,msg)
         #cast message to all subscribers of x if ALIVE
-        Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode) end)
+        if retweet_testing == 0 do
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 0, server_pid) end)
+        else
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 1, server_pid) end)
+        end
         {:reply,tweetid,{clientnode}}
     end
 
@@ -125,10 +129,14 @@ defmodule TwitterEngine.Server do
         {:noreply,{clientnode}}
     end
 
-    def send_if_alive(follower,sender,msg,tweetid,clientnode)do
+    def send_if_alive(follower,sender,msg,tweetid,clientnode, retweet_testing, server_pid) do
         status = :ets.lookup_element(:tab_user,follower,4)
         if status == "connected" do
-            GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:incoming_tweet,sender,msg})
+            if retweet_testing == 0 do
+                GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 0, server_pid})    
+            else
+                GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 1, server_pid})
+            end
         else
             old_msgq = :ets.lookup_element(:tab_msgq,follower,2)
             new_msgq = old_msgq ++ [tweetid]
