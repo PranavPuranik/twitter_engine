@@ -12,7 +12,7 @@ defmodule TwitterengineTest do
 
   #====================  REGISTRATION TESTING =========================#
   test "Registration", %{server: server_pid,clients: clients} do
-    
+
     assert [] = :ets.lookup(:tab_user, 1)
 
     GenServer.cast(Enum.at(clients,0),{:register,server_pid})
@@ -60,7 +60,7 @@ defmodule TwitterengineTest do
     assert [{"#great", _}] = :ets.lookup(:tab_hashtag, "#great")
   end
 
- #====================  MENTIONS TESTING =========================# 
+ #====================  MENTIONS TESTING =========================#
   test "DoubleMentions", %{server: server_pid,clients: clients} do
     GenServer.cast(Enum.at(clients,0),{:register,server_pid})
     :sys.get_state(Enum.at(clients,0))
@@ -80,32 +80,29 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    tweetIdsWithHashHero = []
-    tweetIdsWithoutHashHero = []
-    tweetIdsWithHashHero ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"]})]
-    tweetIdsWithHashHero ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #hero"]})]
-    tweetIdsWithoutHashHero ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#DOS is #great"]})]
-    assert tweetIdsWithoutHashHero = elem(Enum.at(:ets.lookup(:tab_hashtag, "#hero"),0),1)
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"]})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #hero"]})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#DOS is #great"]})
+    assert ["@AlinDobra is #hero","@pranav is #hero"] == GenServer.call(Enum.at(clients,0),{:queryHashTags,server_pid,"#hero"})
   end
 
-  #====================  QUERY TEST WITH MENTIONS TESTING =========================#
+  #====================  QUERY TEST WITH MY MENTIONS =========================#
   test "Query-tweets with specific mentions", %{server: server_pid,clients: clients} do
     GenServer.cast(Enum.at(clients,0),{:register,server_pid})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_mentions)
 
-    tweetIdsWithMentionPranav = []
-    tweetIdsWithoutMentionPranav = []
-    tweetIdsWithMentionPranav ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #champion"]})]
-    tweetIdsWithMentionPranav ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"]})]
-    tweetIdsWithoutMentionPranav ++ [GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #great"]})]
-    assert tweetIdsWithMentionPranav = elem(Enum.at(:ets.lookup(:tab_mentions, "@pranav"),0),1)
+    clientName = "@"<>Atom.to_string(elem(:erlang.process_info(Enum.at(clients,0),:registered_name),1))
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #champion"]})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #hero"]})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #great"]})
+    assert  [clientName<>" is #hero",clientName<>" is #champion"] == GenServer.call(Enum.at(clients,0),{:queryMyMention,server_pid,clientName})
   end
 
   #====================  SUBSCRIBER TESTING =========================#
   test "Subscribe",  %{server: server_pid,clients: clients} do
-    
+
     assert [] = :ets.lookup(:tab_user, 1)
     assert [] = :ets.lookup(:tab_user, 2)
 
