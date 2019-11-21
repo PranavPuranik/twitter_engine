@@ -8,7 +8,7 @@ defmodule ApplicationSupervisor do
 
     def init([clients, messages]) do
       children = [
-        worker(TwitterEngine.Server, ["twitterServer"], [id: "server"]) |
+        worker(TwitterEngine.Server, [{"twitterServer"}], [id: "server"]) |
         Enum.map(1..clients, fn n ->
           worker(TwitterEngine.Client, [{n, messages, clients}], [id: "worker_client_#{n}"] )
         end)

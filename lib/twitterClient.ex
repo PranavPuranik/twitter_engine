@@ -12,6 +12,7 @@ defmodule TwitterEngine.Client do
 
   def handle_cast({:register},{id, messages, clients}) do
     GenServer.cast(:twitterServer,{:registerUser,id})
+    GenServer.cast(:main,{:registered})
     {:noreply, {id, messages, clients}}
   end
 
@@ -68,6 +69,16 @@ defmodule TwitterEngine.Client do
     end
     {:noreply,{id, messages, clients}}
   end
+
+  def handle_cast({:simulate,current_state,numMsg,tweet_pool},{id, messages, clients}) do
+        if(current_state < numMsg && elem(Enum.at(:ets.lookup(:tweet_counter,"count"),0),1)<numMsg) do
+          GenServer.call(:tweet,tweet_pool, Enum.random(0))
+          GenServer.cast(self(),{:simulate,current_state+1})
+        else
+          IO.inspect "User #{id} done !!"
+        end
+      {:noreply,{id, messages, clients}}
+    end
 
 
 end

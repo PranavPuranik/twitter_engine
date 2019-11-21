@@ -15,6 +15,8 @@ defmodule TwitterEngine.Server do
         :ets.new(:tab_msgq, [:set, :protected, :named_table])
         :ets.new(:tab_hashtag, [:set, :protected, :named_table])
         :ets.new(:tab_mentions, [:set, :protected, :named_table])
+        :ets.new(:tweet_counter, [:set, :public, :named_table])
+        :ets.insert(:tweet_counter, {"count",0})
         {:ok, {clientnode}}
     end
 
@@ -34,7 +36,7 @@ defmodule TwitterEngine.Server do
     def handle_cast({:registerUser,x},{clientnode}) do
         #update table (add a new user x)
         :ets.insert_new(:tab_user, {x, [], [], "connected",0})
-        #GenServer.cast({:orc,clientnode},{:registered})
+        GenServer.cast(:main,{:registered})
         {:noreply,{clientnode}}
     end
 
@@ -80,6 +82,7 @@ defmodule TwitterEngine.Server do
         #update tweet table (add msg to tweet list of x)
         tweetid = Integer.to_string(x)<>"T"<>Integer.to_string(old_count+1)
         :ets.insert_new(:tab_tweet, {tweetid,x,msg})
+        :ets.update_counter(:tweet_counter, "count", {2,1})
         #update hashtag and mentions table
         hashtag_update(tweetid,msg)
         mentions_update(tweetid,msg)
