@@ -3,11 +3,12 @@ defmodule ApplicationSupervisor do
 
     def start_link(args) do
         Supervisor.start_link(__MODULE__,args)
+         GenServer.cast(:main,{:clients_created})
     end
 
     def init([clients, messages]) do
       children = [
-        worker(TwitterEngine.Server, ['abc'], [id: "server"]) |
+        worker(TwitterEngine.Server, ["twitterServer"], [id: "server"]) |
         Enum.map(1..clients, fn n ->
           worker(TwitterEngine.Client, [{n, messages, clients}], [id: "worker_client_#{n}"] )
         end)
