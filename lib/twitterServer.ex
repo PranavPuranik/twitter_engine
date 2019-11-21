@@ -63,10 +63,6 @@ defmodule TwitterEngine.Server do
         new_list = Enum.uniq(old_list++subscribe_to)
         :ets.update_element(:tab_user, x, {2, new_list})
 
-        IO.inspect x
-        IO.inspect subscribe_to
-        IO.inspect :ets.lookup(:tab_user, x)
-
         #update table (add x to followers list)
         Enum.map(subscribe_to, fn(y)->
             :ets.update_element(:tab_user, y,
@@ -111,10 +107,10 @@ defmodule TwitterEngine.Server do
     end
 
     def handle_call({:allSubscribedTweets,id},_from,{clientnode}) do
-      tweets = Enum.map elem(:ets.lookup(:tab_user, id),1),fn x->
-        IO.inspect :ets.match(:tab_tweet,{:"_",x,:"_"})
+      tweets = Enum.map elem(Enum.at(:ets.lookup(:tab_user, id),0),1),fn x->
+        Enum.at(List.flatten(:ets.match(:tab_tweet,{:"_",x,:"$1"})),0)
       end
-      {:reply,[], {clientnode}}
+      {:reply,tweets, {clientnode}}
     end
 
     def handle_cast({:all_completed},{clientnode}) do
@@ -130,9 +126,9 @@ defmodule TwitterEngine.Server do
         status = :ets.lookup_element(:tab_user,follower,4)
         if status == "connected" do
             if retweet_testing == 0 do
-                GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 0, server_pid})
+                #GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 0, server_pid})
             else
-                GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 1, server_pid})
+                #GenServer.cast({String.to_atom("user"<>Integer.to_string(follower)),clientnode},{:on_the_feed,sender,msg, 1, server_pid})
             end
         else
             old_msgq = :ets.lookup_element(:tab_msgq,follower,2)

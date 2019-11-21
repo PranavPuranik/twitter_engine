@@ -80,23 +80,23 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"]})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #hero"]})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#DOS is #great"]})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@pranav is #hero"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #hero"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#DOS is #great"],0})
     assert ["@AlinDobra is #hero","@pranav is #hero"] == GenServer.call(Enum.at(clients,0),{:queryHashTags,server_pid,"#hero"})
   end
 
   #====================  QUERY TWEETS WITH MY MENTIONS =========================#
-  test "Query-tweets with specific mentions", %{server: server_pid,clients: clients} do
+  test "Query-tweets with my mentions", %{server: server_pid,clients: clients} do
     GenServer.cast(Enum.at(clients,0),{:register,server_pid})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_mentions)
 
     clientName = "@"<>Atom.to_string(elem(:erlang.process_info(Enum.at(clients,0),:registered_name),1))
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #champion"]})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #hero"]})
-    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #great"]})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #champion"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,[clientName<>" is #hero"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["@AlinDobra is #great"],0})
     assert  [clientName<>" is #hero",clientName<>" is #champion"] == GenServer.call(Enum.at(clients,0),{:queryMyMention,server_pid,clientName})
   end
 
@@ -120,11 +120,6 @@ defmodule TwitterengineTest do
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(Enum.at(clients,1))
     :sys.get_state(server_pid)
-
-    # IO.inspect ['==>', :ets.lookup(:tab_user, 1)]
-    # IO.inspect ['===>', :ets.lookup(:tab_user, 1)]
-    # IO.inspect ['==>', :ets.lookup(:tab_user, 2)]
-    # IO.inspect ['===>', :ets.lookup(:tab_user, 2)]
 
     #adding to subscriber list
     assert [{1, [2], [], "connected", 0}] = :ets.lookup(:tab_user, 1)
@@ -182,8 +177,9 @@ defmodule TwitterengineTest do
     assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
 
     #Atom.to_string(elem(:erlang.process_info(Enum.at(clients,0),:registered_name),1))
-    GenServer.call(Enum.at(clients,1),{:tweet,server_pid,["#tweet from 2"]})
-    GenServer.call(Enum.at(clients,0),{:allSubscribedTweets,server_pid})
+    GenServer.call(Enum.at(clients,1),{:tweet,server_pid,["#tweet from 2"],0})
+    GenServer.call(Enum.at(clients,0),{:tweet,server_pid,["#tweet from 1"],0})
+    assert ["#tweet from 2"] = GenServer.call(Enum.at(clients,0),{:allSubscribedTweets,server_pid})
 	end
 
 
