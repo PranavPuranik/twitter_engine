@@ -7,6 +7,22 @@ defmodule TwitterEngine.Client do
   end
 
   def init({id, messages, clients}) do
+
+    #ZIPF - considering the clients with starting ids have more subscribers
+    messages = cond do
+                 id <= (clients*0.01) ->
+                     messages * 20
+                     
+                 id <= (clients*0.1) ->
+                     messages * 10
+                 
+                 id <= (clients*0.6) ->
+                     messages * 2
+
+                 true ->
+                     messages
+              end
+
     {:ok, {id, messages, clients}}
   end
 
@@ -15,6 +31,42 @@ defmodule TwitterEngine.Client do
     GenServer.cast(:main,{:registered})
     {:noreply, {id, messages, clients}}
   end
+
+
+  # def handle_cast({:action,current_state},{x,acts,servernode,clients,tweets_pool}) do
+  #     if(current_state < acts) do
+  #         choice = rem(:rand.uniform(999999),14)
+  #         case choice do
+  #             1 ->   
+  #                 #subscribe(x,servernode,clients)
+  #                 tweet_hash(x,servernode,tweets_pool,clients)  
+
+  #             2 -> 
+  #                 tweet_mention(x,servernode,tweets_pool,clients)
+
+  #             3 ->
+  #                 queryhashtags(x,servernode)
+
+  #             4 ->
+  #                 query_self_mentions(x,servernode)
+
+  #             5 ->
+  #                 discon(x,servernode)
+
+  #             _ ->
+  #                 tweet(x,servernode,tweets_pool)
+  #                 #querytweets(x)
+
+  #         end
+  #         #Process.sleep (:rand.uniform(100))
+  #         #IO.puts "client #{x} act #{acts}"
+  #         GenServer.cast(self(),{:action,current_state + 1})
+  #     else
+  #         IO.puts "User #{x} has finised generating at least #{acts} activities (Tweets/Queries)."
+  #         GenServer.cast(:orc, {:acts_completed})
+  #     end
+  #     {:noreply,{x,acts,servernode,clients,tweets_pool}}  
+  #   end
 
   def handle_cast({:deRegister},{id, messages, clients}) do
     GenServer.cast(:twitterServer,{:deRegisterUser,id})

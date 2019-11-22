@@ -17,6 +17,7 @@ defmodule Main do
           #register user
           nodeid_list = Enum.map(1..numClients, fn(x) -> "worker_client_"<>Integer.to_string(x) end)
           Enum.map(nodeid_list, fn(x) -> GenServer.cast(String.to_atom(x),{:register}) end)
+          subscribe(nodeid_list,numClients)
         {:registered} ->
           count = :ets.update_counter(:registration_counter, "count", {2,1})
           if count==numClients do
@@ -27,5 +28,25 @@ defmodule Main do
           end
       end
         simulator(numClients, numMessages)
+    end
+
+    #topmost nodes will be the most subscribed nodes
+    def subscribe(nodeid_list, clients) do
+    	Enum.map(nodeid_list, fn(id) -> 
+    			subscribe_to = 	cond do
+				    				id <= (clients*0.01) ->
+				    					[1..(clients*0.01)] -- [id]
+
+				    				id <= (clients*0.1) ->
+				    					[1..(clients*0.1)] -- [id]
+
+				    				id <= (clients*0.5) ->
+				    					[1..(clients*0.6)] -- [id]
+
+				    				true -> 
+				    					Enum.take_random([1..clients, round(clients*0.8)])
+				    			end 
+    			GenServer.cast(String.to_atom("client_#{id}"),{:subscribe, subscribe_to}	) 
+    	end)
     end
 end
