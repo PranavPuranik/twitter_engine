@@ -2,8 +2,9 @@ defmodule ApplicationSupervisor do
     use Supervisor
 
     def start_link(args) do
-        Supervisor.start_link(__MODULE__,args)
-         GenServer.cast(:main,{:clients_created})
+        {:ok,pid} = Supervisor.start_link(__MODULE__,args)
+        send(:global.whereis_name(:main),{:clients_created})
+        {:ok,pid}
     end
 
     def init([clients, messages]) do
