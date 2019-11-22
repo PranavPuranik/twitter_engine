@@ -150,6 +150,11 @@ defmodule TwitterengineTest do
    :sys.get_state(Enum.at(clients,1))
    :sys.get_state(Enum.at(clients,0))
    :sys.get_state(server_pid)
+
+   :sys.get_state(Enum.at(clients,1))
+   :sys.get_state(Enum.at(clients,0))
+   :sys.get_state(server_pid)
+   
    { _, _, client1_retweet} = Enum.at(:ets.match_object(:tab_tweet, {:"_", 1, :"_"}),0)
    { _, _, client2_tweet} = Enum.at(:ets.match_object(:tab_tweet, {:"_", 2, :"_"}),0)
    assert  client2_tweet == String.slice(client1_retweet,0..-28)

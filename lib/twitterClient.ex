@@ -93,6 +93,7 @@ defmodule TwitterEngine.Client do
   end
 
   def handle_cast({:subscribe, subscribe_to},{id, messages, clients})do
+    #IO.inspect [id, subscribe_to]
     GenServer.cast(:twitterServer,{:subscribe,id,subscribe_to})
     {:noreply, {id, messages, clients}}
   end
@@ -103,7 +104,7 @@ defmodule TwitterEngine.Client do
   end
 
   def handle_cast({:on_the_feed, tweet_by,message, chance},{id, messages, clients})do
-    IO.puts "user#{id} received a tweet from user#{tweet_by}:: #{messages} #{chance}"
+    #IO.puts "user#{id} received a tweet from user#{tweet_by}:: #{messages} #{chance}"
     chance =  if chance != 1 do
                 100
               else
@@ -115,7 +116,7 @@ defmodule TwitterEngine.Client do
                   else
                       message <> " - Retweeted from source #{tweet_by}."
                   end
-      #IO.puts "Retweeting: "<>rt_msg
+      #IO.puts "Retweeting: "<>retweet
       GenServer.cast(:twitterServer,{:tweet,id,retweet, 0})
     end
     {:noreply,{id, messages, clients}}
@@ -126,7 +127,7 @@ defmodule TwitterEngine.Client do
           GenServer.cast(self(),{:tweet,tweet_pool,0})
           GenServer.cast(self(),{:simulate,current_state+1,numMsg,tweet_pool})
         else
-          IO.inspect "User #{id} done !!"
+          IO.inspect ["User #{id} done with #{messages}!!", :ets.lookup(:tab_user, id)], charlists: :as_lists
         end
       {:noreply,{id, messages, clients}}
     end

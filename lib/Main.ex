@@ -30,21 +30,30 @@ defmodule Main do
 
     #topmost nodes will be the most subscribed nodes
     def subscribe(nodeid_list, clients) do
+    	#IO.inspect ["Clients: ", clients]
     	Enum.map(nodeid_list, fn(id) -> 
-    			subscribe_to = 	cond do
-				    				id <= (clients*0.01) ->
-				    					[1..(clients*0.01)] -- [id]
 
-				    				id <= (clients*0.1) ->
-				    					[1..(clients*0.1)] -- [id]
+		subscribe_to = 	cond do
+		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.01) ->
+		    					Enum.map(1..round(clients*0.01), fn n -> n end) -- [id]
 
-				    				id <= (clients*0.5) ->
-				    					[1..(clients*0.6)] -- [id]
+		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.1) ->
+		    					IO.inspect "here"
+		    					Enum.map(1..round(clients*0.1), fn n -> n end) -- [id]
 
-				    				true -> 
-				    					Enum.take_random([1..clients, round(clients*0.8)])
-				    			end 
-    			GenServer.cast(String.to_atom("client_#{id}"),{:subscribe, subscribe_to}	) 
+		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.5) ->
+		    					Enum.map(1..round(clients*0.6), fn n -> n end) -- [id]
+
+		    				true -> 
+		    					IO.inspect id
+		    					Enum.take_random(1..clients, round(clients*0.8)) -- [id]
+		    			end 
+		IO.inspect [id, subscribe_to]
+		GenServer.cast(String.to_atom(id),{:subscribe, subscribe_to}) 
+
     	end)
+    	#:sys.get_state(Enum.at(clients,1))
+	    #:sys.get_state(Enum.at(clients,0))
+	    :sys.get_state(:twitterServer)
     end
 end
