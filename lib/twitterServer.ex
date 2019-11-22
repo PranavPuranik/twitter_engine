@@ -2,10 +2,10 @@ defmodule TwitterEngine.Server do
     use GenServer
 
     def start_link({name}) do
-        GenServer.start_link(__MODULE__, {"clientnode"}, name: String.to_atom(name))
+        GenServer.start_link(__MODULE__, {"state"}, name: String.to_atom(name))
     end
 
-    def init({clientnode}) do
+    def init({state}) do
         # state:
         # ets tables
         #IO.puts "Server Started"
@@ -17,46 +17,48 @@ defmodule TwitterEngine.Server do
         :ets.new(:tab_mentions, [:set, :protected, :named_table])
         :ets.new(:tweet_counter, [:set, :public, :named_table])
         :ets.insert(:tweet_counter, {"count",0})
-        {:ok, {clientnode}}
+        {:ok, {state}}
     end
 
     def handle_call({:simulator_add,address},_,{_}) do
-         clientnode = address
-         IO.puts "Connected to client simulator sucessfully at #{clientnode}."
+         state = address
+         IO.puts "Connected to client simulator sucessfully at #{state}."
          IO.puts "All IO showing the progress of the simulation at the Simulator console."
-        {:reply,"ok",{clientnode}}
+        {:reply,"ok",{state}}
     end
 
-    def handle_cast({:disconnection,x},{clientnode})do
+    def handle_cast({:disconnection,x},{state})do
         :ets.update_element(:tab_user,x,{4, "disconnected"})
         :ets.insert_new(:tab_msgq,{x,[]})
-        {:noreply,{clientnode}}
+        {:noreply,{state}}
     end
 
-    def handle_cast({:registerUser,x},{clientnode}) do
+    def handle_cast({:registerUser,x},{state}) do
         #update table (add a new user x)
         :ets.insert_new(:tab_user, {x, [], [], "connected",0})
-        GenServer.cast(:main,{:registered})
-        {:noreply,{clientnode}}
+        if :global.whereis_name(:main)!= :undefined do
+          send(:global.whereis_name(:main),{:registered})
+        end
+        {:noreply,{state}}
     end
 
-    def handle_cast({:deRegisterUser,x},{clientnode}) do
+    def handle_cast({:deRegisterUser,x},{state}) do
         #update table (add a new user x)
         :ets.delete(:tab_user,x)
-        #GenServer.cast({:orc,clientnode},{:registered})
-        {:noreply,{clientnode}}
+        #GenServer.cast({:orc,state},{:registered})
+        {:noreply,{state}}
     end
 
-    def handle_cast({:reconnection,x},{clientnode})do
+    def handle_cast({:reconnection,x},{state})do
         :ets.update_element(:tab_user,x,{4, "connected"})
         [{_,tweetlist}]=:ets.lookup(:tab_msgq,x)
         :ets.delete(:tab_msgq,x)
         result = Enum.map(tweetlist,fn(x)-> :ets.lookup(:tab_tweet,x)end)
-        GenServer.cast({String.to_atom("user"<>Integer.to_string(x)),clientnode},{:query_result, result})
-        {:noreply,{clientnode}}
+        GenServer.cast({String.to_atom("user"<>Integer.to_string(x)),state},{:query_result, result})
+        {:noreply,{state}}
     end
 
-    def handle_cast({:subscribe,x,subscribe_to},{clientnode})do
+    def handle_cast({:subscribe,x,subscribe_to},{state})do
         #update table (add subscribe to for user x)
         [{_,old_list,_,_,_}] = :ets.lookup(:tab_user, x)
 
@@ -72,10 +74,10 @@ defmodule TwitterEngine.Server do
             )
         end)
         #IO.inspect :ets.select(:tab_user, [{{:"$1", :"$2", :"$3",:"$4"}, [], [:"$_"]}])
-        {:noreply,{clientnode}}
+        {:noreply,{state}}
     end
 
-    def handle_call({:tweet,x,msg, retweet_testing},_from,{clientnode})do
+    def handle_cast({:tweet,x,msg, retweet_testing},{state})do
         #update tweet counter
         [{_,_,followers_list,_,old_count}] = :ets.lookup(:tab_user, x)
         :ets.update_element(:tab_user, x, {5, old_count+1})
@@ -88,44 +90,44 @@ defmodule TwitterEngine.Server do
         mentions_update(tweetid,msg)
         #cast message to all subscribers of x if ALIVE
         if retweet_testing == 0 do
-            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 0) end)
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,state, 0) end)
         else
-            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,clientnode, 1) end)
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,state, 1) end)
         end
-        {:reply,tweetid,{clientnode}}
+        {:noreply,{state}}
     end
 
-    def handle_call({:queryHashTags,hashTag},_from,{clientnode}) do
+    def handle_call({:queryHashTags,hashTag},_from,{state}) do
       tweetsWithHashTag = Enum.map elem(Enum.at(:ets.lookup(:tab_hashtag, hashTag),0),1),fn x->
         elem(Enum.at(:ets.lookup(:tab_tweet, x),0),2)
       end
-      {:reply,tweetsWithHashTag, {clientnode}}
+      {:reply, tweetsWithHashTag,{state}}
     end
 
-    def handle_call({:queryMyMention,mention},_from,{clientnode}) do
+    def handle_call({:queryMyMention,mention},_from,{state}) do
       tweetsWithMyMentions = Enum.map elem(Enum.at(:ets.lookup(:tab_mentions, mention),0),1),fn x->
         elem(Enum.at(:ets.lookup(:tab_tweet, x),0),2)
       end
-      {:reply,tweetsWithMyMentions, {clientnode}}
+      {:reply, tweetsWithMyMentions,{state}}
     end
 
-    def handle_call({:allSubscribedTweets,id},_from,{clientnode}) do
+    def handle_call({:allSubscribedTweets,id},_from,{state}) do
       tweets = Enum.map elem(Enum.at(:ets.lookup(:tab_user, id),0),1),fn x->
         Enum.at(List.flatten(:ets.match(:tab_tweet,{:"_",x,:"$1"})),0)
       end
-      {:reply,tweets, {clientnode}}
+      {:reply,tweets, {state}}
     end
 
-    def handle_cast({:all_completed},{clientnode}) do
+    def handle_cast({:all_completed},{state}) do
         IO.puts "Exiting."
-        GenServer.cast({:orc,clientnode},{:time})
+        GenServer.cast({:orc,state},{:time})
         :global.sync()
         #send(:global.whereis_name(:client_boss),{:all_requests_served})
         send(:global.whereis_name(:server_boss),{:all_requests_served_s})
-        {:noreply,{clientnode}}
+        {:noreply,{state}}
     end
 
-    def send_if_alive(follower,sender,msg,tweetid,clientnode, retweet_testing) do
+    def send_if_alive(follower,sender,msg,tweetid,state, retweet_testing) do
         status = :ets.lookup_element(:tab_user,follower,4)
         if status == "connected" do
             if retweet_testing == 0 do

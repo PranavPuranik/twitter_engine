@@ -28,7 +28,6 @@ defmodule TwitterEngine.Client do
 
   def handle_cast({:register},{id, messages, clients}) do
     GenServer.cast(:twitterServer,{:registerUser,id})
-    GenServer.cast(:main,{:registered})
     {:noreply, {id, messages, clients}}
   end
 
@@ -73,24 +72,24 @@ defmodule TwitterEngine.Client do
     {:noreply, {id, messages, clients}}
   end
 
-  def handle_call({:tweet,tweet_pool, retweet_testing}, _from,{id, messages, clients}) do
+  def handle_cast({:tweet,tweet_pool, retweet_testing},{id, messages, clients}) do
     msg = Enum.random(tweet_pool)
     tweetId = if retweet_testing == 0 do
-      GenServer.call(:twitterServer,{:tweet,id,msg, 0})
+      GenServer.cast(:twitterServer,{:tweet,id,msg, 0})
     else
-      GenServer.call(:twitterServer,{:tweet,id,msg, 1})
+      GenServer.cast(:twitterServer,{:tweet,id,msg, 1})
     end
-    {:reply,tweetId, {id, messages, clients}}
+    {:noreply, {id, messages, clients}}
   end
 
   def handle_call({:queryHashTags,hashTag},_from,{id, messages, clients}) do
-    tweets = GenServer.call(:twitterServer,{:queryHashTags,hashTag})
+    tweets=GenServer.call(:twitterServer,{:queryHashTags,hashTag})
     {:reply,tweets, {id, messages, clients}}
   end
 
   def handle_call({:queryMyMention,mention},_from,{id, messages, clients}) do
-    tweets = GenServer.call(:twitterServer,{:queryMyMention,mention})
-    {:reply,tweets, {id, messages, clients}}
+    tweets= GenServer.call(:twitterServer,{:queryMyMention,mention})
+    {:reply, tweets,{id, messages, clients}}
   end
 
   def handle_cast({:subscribe, subscribe_to},{id, messages, clients})do
@@ -100,7 +99,7 @@ defmodule TwitterEngine.Client do
 
   def handle_call({:allSubscribedTweets},_from,{id, messages, clients})do
     tweets = GenServer.call(:twitterServer,{:allSubscribedTweets,id})
-    {:reply, tweets,{id, messages, clients}}
+    {:reply,tweets,{id, messages, clients}}
   end
 
   def handle_cast({:on_the_feed, tweet_by,message, chance},{id, messages, clients})do
@@ -117,15 +116,15 @@ defmodule TwitterEngine.Client do
                       message <> " - Retweeted from source #{tweet_by}."
                   end
       #IO.puts "Retweeting: "<>rt_msg
-      tweetId = GenServer.call(:twitterServer,{:tweet,id,retweet, 0})
+      GenServer.cast(:twitterServer,{:tweet,id,retweet, 0})
     end
     {:noreply,{id, messages, clients}}
   end
 
   def handle_cast({:simulate,current_state,numMsg,tweet_pool},{id, messages, clients}) do
         if(current_state < numMsg && elem(Enum.at(:ets.lookup(:tweet_counter,"count"),0),1)<numMsg) do
-          GenServer.call(:tweet,tweet_pool, Enum.random(0))
-          GenServer.cast(self(),{:simulate,current_state+1})
+          GenServer.cast(self(),{:tweet,tweet_pool,0})
+          GenServer.cast(self(),{:simulate,current_state+1,numMsg,tweet_pool})
         else
           IO.inspect "User #{id} done !!"
         end
