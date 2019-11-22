@@ -60,39 +60,43 @@ defmodule TwitterEngine.Server do
 
     def handle_cast({:subscribe,x,subscribe_to},{state})do
         #update table (add subscribe to for user x)
+        subscribe_to = subscribe_to -- [x]
         [{_,old_list,_,_,_}] = :ets.lookup(:tab_user, x)
 
         #subscribe_to = Enum.uniq(subscribe_to) -- [x]
         #IO.puts "user#{x} is now following #{Enum.at(subscribe_to,0)}, #{Enum.at(subscribe_to,1)}"
-        new_list = Enum.uniq(old_list++subscribe_to)
+        new_list = Enum.uniq(old_list++subscribe_to)    
         :ets.update_element(:tab_user, x, {2, new_list})
 
         #update table (add x to followers list)
         Enum.map(subscribe_to, fn(y)->
+            #IO.inspect ["in", y, elem(Enum.at(:ets.lookup(:tab_user, y), 0), 3)], charlists: :as_lists
             :ets.update_element(:tab_user, y,
-                {3, [x]++List.flatten(:ets.match(:tab_user, {y,:"_",:"$1",:"_"}))}
+                {3, [x |elem(Enum.at(:ets.lookup(:tab_user, y), 0), 2)] }
             )
         end)
+
         #IO.inspect :ets.select(:tab_user, [{{:"$1", :"$2", :"$3",:"$4"}, [], [:"$_"]}])
         {:noreply,{state}}
     end
 
-    def handle_cast({:tweet,x,msg, retweet_testing},{state})do
+    def handle_cast({:tweet,id,message, retweet_testing},{state})do
         #update tweet counter
-        [{_,_,followers_list,_,old_count}] = :ets.lookup(:tab_user, x)
-        :ets.update_element(:tab_user, x, {5, old_count+1})
+        #IO.inspect "#{id} --> #{message} "
+        [{_,_,followers_list,_,old_count}] = :ets.lookup(:tab_user, id)
+        :ets.update_element(:tab_user, id, {5, old_count+1})
         #update tweet table (add msg to tweet list of x)
-        tweetid = Integer.to_string(x)<>"T"<>Integer.to_string(old_count+1)
-        :ets.insert_new(:tab_tweet, {tweetid,x,msg})
+        tweetid = Integer.to_string(id)<>"T"<>Integer.to_string(old_count+1)
+        :ets.insert_new(:tab_tweet, {tweetid,id,message})
         :ets.update_counter(:tweet_counter, "count", {2,1})
         #update hashtag and mentions table
-        hashtag_update(tweetid,msg)
-        mentions_update(tweetid,msg)
+        hashtag_update(tweetid,message)
+        mentions_update(tweetid,message)
         #cast message to all subscribers of x if ALIVE
         if retweet_testing == 0 do
-            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,state, 0) end)
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,id,message,tweetid,state, 0) end)
         else
-            Enum.map(followers_list,fn(y)-> send_if_alive(y,x,msg,tweetid,state, 1) end)
+            Enum.map(followers_list,fn(y)-> send_if_alive(y,id,message,tweetid,state, 1) end)
         end
         {:noreply,{state}}
     end
