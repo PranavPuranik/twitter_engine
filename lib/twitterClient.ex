@@ -12,10 +12,10 @@ defmodule TwitterEngine.Client do
     messages = cond do
                  id <= (clients*0.01) ->
                      messages * 20
-                     
+
                  id <= (clients*0.1) ->
                      messages * 10
-                 
+
                  id <= (clients*0.6) ->
                      messages * 2
 
@@ -36,11 +36,11 @@ defmodule TwitterEngine.Client do
   #     if(current_state < acts) do
   #         choice = rem(:rand.uniform(999999),14)
   #         case choice do
-  #             1 ->   
+  #             1 ->
   #                 #subscribe(x,servernode,clients)
-  #                 tweet_hash(x,servernode,tweets_pool,clients)  
+  #                 tweet_hash(x,servernode,tweets_pool,clients)
 
-  #             2 -> 
+  #             2 ->
   #                 tweet_mention(x,servernode,tweets_pool,clients)
 
   #             3 ->
@@ -64,7 +64,7 @@ defmodule TwitterEngine.Client do
   #         IO.puts "User #{x} has finised generating at least #{acts} activities (Tweets/Queries)."
   #         GenServer.cast(:orc, {:acts_completed})
   #     end
-  #     {:noreply,{x,acts,servernode,clients,tweets_pool}}  
+  #     {:noreply,{x,acts,servernode,clients,tweets_pool}}
   #   end
 
   def handle_cast({:deRegister},{id, messages, clients}) do
@@ -104,7 +104,7 @@ defmodule TwitterEngine.Client do
   end
 
   def handle_cast({:on_the_feed, tweet_by,message, chance},{id, messages, clients})do
-    #IO.puts "user#{id} received a tweet from user#{tweet_by}:: #{messages} #{chance}"
+    #IO.puts "user#{id} received a tweet from user:#{tweet_by}:: #{message} #{chance}"
     chance =  if chance != 1 do
                 100
               else

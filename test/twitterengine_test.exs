@@ -154,7 +154,7 @@ defmodule TwitterengineTest do
    :sys.get_state(Enum.at(clients,1))
    :sys.get_state(Enum.at(clients,0))
    :sys.get_state(server_pid)
-   
+
    { _, _, client1_retweet} = Enum.at(:ets.match_object(:tab_tweet, {:"_", 1, :"_"}),0)
    { _, _, client2_tweet} = Enum.at(:ets.match_object(:tab_tweet, {:"_", 2, :"_"}),0)
    assert  client2_tweet == String.slice(client1_retweet,0..-28)
@@ -186,6 +186,34 @@ defmodule TwitterengineTest do
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert ["#tweet from 2"] = GenServer.call(Enum.at(clients,0),{:allSubscribedTweets})
+	end
+
+  #====================  LIVE TWEETS TEST (if user is subscried) =========================#
+  test "Live-tweets test", %{server: server_pid,clients: clients} do
+    GenServer.cast(Enum.at(clients,0),{:register})
+    GenServer.cast(Enum.at(clients,1),{:register})
+	  :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(Enum.at(clients,1))
+    :sys.get_state(server_pid)
+
+    GenServer.cast(Enum.at(clients,0),{:subscribe, [2]})
+	  :sys.get_state(Enum.at(clients,0))
+    :sys.get_state(Enum.at(clients,1))
+    :sys.get_state(server_pid)
+
+	  #adding to subscriber list
+    assert [{1, [2], [], "connected", 0}] = :ets.lookup(:tab_user, 1)
+    #adding to follower list
+    assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
+
+    pid = Enum.at(clients,0)
+    :erlang.trace(pid, true, [:receive])
+
+    GenServer.cast(Enum.at(clients,1),{:tweet,["#tweet from 2"],0})
+    :sys.get_state(Enum.at(clients,1))
+    :sys.get_state(server_pid)
+
+    assert_receive {:trace, ^pid, :receive, {:"$gen_cast",{:on_the_feed,2,"#tweet from 2",_}}}
 	end
 
 end

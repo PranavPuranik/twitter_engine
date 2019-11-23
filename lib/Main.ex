@@ -31,7 +31,7 @@ defmodule Main do
     #topmost nodes will be the most subscribed nodes
     def subscribe(nodeid_list, clients) do
     	#IO.inspect ["Clients: ", clients]
-    	Enum.map(nodeid_list, fn(id) -> 
+    	Enum.map(nodeid_list, fn(id) ->
 
 		subscribe_to = 	cond do
 		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.01) ->
@@ -44,16 +44,16 @@ defmodule Main do
 		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.5) ->
 		    					Enum.map(1..round(clients*0.6), fn n -> n end) -- [id]
 
-		    				true -> 
+		    				true ->
 		    					IO.inspect id
 		    					Enum.take_random(1..clients, round(clients*0.8)) -- [id]
-		    			end 
+		    			end
 		IO.inspect [id, subscribe_to]
-		GenServer.cast(String.to_atom(id),{:subscribe, subscribe_to}) 
+		GenServer.cast(String.to_atom(id),{:subscribe, subscribe_to})
 
     	end)
     	#:sys.get_state(Enum.at(clients,1))
 	    #:sys.get_state(Enum.at(clients,0))
-	    :sys.get_state(:twitterServer)
+	    #:sys.get_state(:twitterServer)
     end
 end
