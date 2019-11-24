@@ -65,7 +65,7 @@ defmodule TwitterEngine.Server do
 
         #subscribe_to = Enum.uniq(subscribe_to) -- [x]
         #IO.puts "user#{x} is now following #{Enum.at(subscribe_to,0)}, #{Enum.at(subscribe_to,1)}"
-        new_list = Enum.uniq(old_list++subscribe_to)    
+        new_list = Enum.uniq(old_list++subscribe_to)
         :ets.update_element(:tab_user, x, {2, new_list})
 
         #update table (add x to followers list)
