@@ -22,7 +22,8 @@ defmodule Main do
           if count==numClients do
             #start simulation
             tweet_pool = Enum.map(nodeid_list, fn(x) -> x<>" is #great"  end)
-            Enum.map(nodeid_list, fn(x) -> GenServer.cast(String.to_atom(x),{:simulate,1,numMessages,tweet_pool}) end)
+            #IO.inspect tweet_pool
+            Enum.map(nodeid_list, fn(x) -> GenServer.cast(String.to_atom(x),{:simulate,tweet_pool}) end)
           end
       end
         simulator(numClients, numMessages,nodeid_list)
@@ -45,10 +46,10 @@ defmodule Main do
 		    					Enum.map(1..round(clients*0.6), fn n -> n end) -- [id]
 
 		    				true ->
-		    					IO.inspect id
+		    					#IO.inspect id
 		    					Enum.take_random(1..clients, round(clients*0.8)) -- [id]
 		    			end
-		IO.inspect [id, subscribe_to]
+		#IO.inspect [id, subscribe_to]
 		GenServer.cast(String.to_atom(id),{:subscribe, subscribe_to})
 
     	end)
