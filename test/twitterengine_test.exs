@@ -107,8 +107,8 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients,0),{:tweet,["@AlinDobra is #great"],0})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
-    IO.inspect ["hehe", :ets.match_object(:tab_tweet, {:"_", 1, :"_"})]
-    IO.inspect [ "haha", GenServer.call(Enum.at(clients,0),{:queryMyMention,clientName})]
+    #IO.inspect ["hehe", :ets.match_object(:tab_tweet, {:"_", 1, :"_"})]
+    #IO.inspect [ "haha", GenServer.call(Enum.at(clients,0),{:queryMyMention,clientName})]
     assert  [clientName<>" is #hero",clientName<>" is #champion"] == GenServer.call(Enum.at(clients,0),{:queryMyMention,clientName})
   end
 

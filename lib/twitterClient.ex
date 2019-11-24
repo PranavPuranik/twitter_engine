@@ -11,16 +11,16 @@ defmodule TwitterEngine.Client do
     #ZIPF - considering the clients with starting ids have more subscribers
     messages = cond do
                  id <= (clients*0.01) ->
-                     messages * 20
+                     messages + (messages * 20)
 
                  id <= (clients*0.1) ->
-                     messages * 10
+                     messages + (messages * 10)
 
                  id <= (clients*0.6) ->
-                     messages * 2
+                     messages + (messages * 2)
 
                  true ->
-                     messages
+                     messages + 1
               end
     already_sent = 0
     {:ok, {id, already_sent, messages, clients}}
@@ -84,12 +84,12 @@ defmodule TwitterEngine.Client do
   end
 
   def handle_call({:queryHashTags,hashTag},_from,{id, already_sent, messages, clients}) do
-    tweets=GenServer.call(:twitterServer,{:queryHashTags,hashTag})
+    tweets=GenServer.call(:twitterServer,{:queryHashTags,hashTag}, :infinity)
     {:reply,tweets, {id, already_sent, messages, clients}}
   end
 
   def handle_call({:queryMyMention,mention},_from,{id, already_sent, messages, clients}) do
-    tweets= GenServer.call(:twitterServer,{:queryMyMention,mention})
+    tweets= GenServer.call(:twitterServer,{:queryMyMention,mention}, :infinity)
     {:reply, tweets,{id, already_sent, messages, clients}}
   end
 
@@ -100,7 +100,7 @@ defmodule TwitterEngine.Client do
   end
 
   def handle_call({:allSubscribedTweets},_from,{id, already_sent, messages, clients})do
-    tweets = GenServer.call(:twitterServer,{:allSubscribedTweets,id})
+    tweets = GenServer.call(:twitterServer,{:allSubscribedTweets,id}, :infinity)
     {:reply,tweets,{id, already_sent, messages, clients}}
   end
 
@@ -145,12 +145,12 @@ defmodule TwitterEngine.Client do
 
           2 ->
               mention = "@client_"<>Integer.to_string(id)
-              results = GenServer.call(:twitterServer,{:queryMyMention,mention})
+              results = GenServer.call(:twitterServer,{:queryMyMention,mention}, :infinity)
               
 
           3 ->
               hashtag = "#some_hashtag_" <>Integer.to_string(:rand.uniform(9))
-              results = GenServer.call(:twitterServer,{:queryHashTags,hashtag})
+              results = GenServer.call(:twitterServer,{:queryHashTags,hashtag}, :infinity)
 
           4 ->
               msg = Enum.random(tweet_pool) <> " @client_"<>Integer.to_string(:rand.uniform(clients))
