@@ -1,5 +1,7 @@
 defmodule Main do
 
+
+
     def main(args) do
       numClients = elem(Integer.parse(Enum.at(args, 0)), 0)
       numMessages = elem(Integer.parse(Enum.at(args, 1)), 0)
@@ -8,7 +10,18 @@ defmodule Main do
       :ets.insert(:registration_counter, {"count",0})
       nodeid_list = Enum.map(1..numClients, fn(x) -> "client_"<>Integer.to_string(x) end)
       ApplicationSupervisor.start_link([numClients, numMessages])
+      
+      IO.puts "We have coded the logic such that, the starting client nodes (with ids 1, 2, 3, 4, etc...) have more followers"
+      IO.puts "So, the number of messages these client nodes send will be more."
+
+      IO.puts "For #{numClients} clients and #{numMessages} messages,"
+
+
+      tic = System.system_time(:millisecond)
       simulator(numClients, numMessages,nodeid_list)
+      toc = System.system_time(:millisecond)
+      IO.puts "Total time taken => #{(toc-tic)/1000} seconds"
+
     end
 
     def simulator(numClients, numMessages,nodeid_list) do
@@ -22,7 +35,8 @@ defmodule Main do
           if count==numClients do
             #start simulation
             tweet_pool = Enum.map(nodeid_list, fn(x) -> x<>" is #great"  end)
-            Enum.map(nodeid_list, fn(x) -> GenServer.cast(String.to_atom(x),{:simulate,1,numMessages,tweet_pool}) end)
+            #IO.inspect tweet_pool
+            Enum.map(nodeid_list, fn(x) -> GenServer.cast(String.to_atom(x),{:simulate,tweet_pool}) end)
           end
       end
         simulator(numClients, numMessages,nodeid_list)
@@ -38,17 +52,17 @@ defmodule Main do
 		    					Enum.map(1..round(clients*0.01), fn n -> n end) -- [id]
 
 		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.1) ->
-		    					IO.inspect "here"
+		    					#IO.inspect "here"
 		    					Enum.map(1..round(clients*0.1), fn n -> n end) -- [id]
 
-		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.5) ->
+		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.6) ->
 		    					Enum.map(1..round(clients*0.6), fn n -> n end) -- [id]
 
 		    				true ->
-		    					IO.inspect id
+		    					#IO.inspect id
 		    					Enum.take_random(1..clients, round(clients*0.8)) -- [id]
 		    			end
-		IO.inspect [id, subscribe_to]
+		#IO.inspect [id, subscribe_to]
 		GenServer.cast(String.to_atom(id),{:subscribe, subscribe_to})
 
     	end)

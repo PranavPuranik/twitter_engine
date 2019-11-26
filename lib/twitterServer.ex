@@ -49,12 +49,14 @@ defmodule TwitterEngine.Server do
         {:noreply,{state}}
     end
 
-    def handle_cast({:reconnection,x},{state})do
-        :ets.update_element(:tab_user,x,{4, "connected"})
-        [{_,tweetlist}]=:ets.lookup(:tab_msgq,x)
-        :ets.delete(:tab_msgq,x)
-        result = Enum.map(tweetlist,fn(x)-> :ets.lookup(:tab_tweet,x)end)
-        GenServer.cast({String.to_atom("user"<>Integer.to_string(x)),state},{:query_result, result})
+    def handle_cast({:reconnection,id},{state})do
+        :ets.update_element(:tab_user,id,{4, "connected"})
+        [{_,tweetlist}]=:ets.lookup(:tab_msgq,id)
+        :ets.delete(:tab_msgq,id)
+        result = Enum.map(tweetlist,fn(z)-> :ets.lookup(:tab_tweet,z)end)
+        Enum.map(result, fn [{a, b, c}] -> 
+            GenServer.cast(String.to_atom("client_"<>Integer.to_string(id)),{:on_the_feed, b, c, 0})
+        end)
         {:noreply,{state}}
     end
 
@@ -102,16 +104,26 @@ defmodule TwitterEngine.Server do
     end
 
     def handle_call({:queryHashTags,hashTag},_from,{state}) do
-      tweetsWithHashTag = Enum.map elem(Enum.at(:ets.lookup(:tab_hashtag, hashTag),0),1),fn x->
-        elem(Enum.at(:ets.lookup(:tab_tweet, x),0),2)
-      end
+      #IO.inspect ["qht", Enum.at(:ets.lookup(:tab_hashtag, hashTag),0)]
+      tweetsWithHashTag =   if Enum.at(:ets.lookup(:tab_hashtag, hashTag), 0) != nil do
+                                Enum.map elem(Enum.at(:ets.lookup(:tab_hashtag, hashTag),0),1),fn x->
+                                    elem(Enum.at(:ets.lookup(:tab_tweet, x),0),2)
+                                end
+                            else
+                                ""
+                            end
+      #tweetsWithHashTag  = ""
       {:reply, tweetsWithHashTag,{state}}
     end
 
     def handle_call({:queryMyMention,mention},_from,{state}) do
-      tweetsWithMyMentions = Enum.map elem(Enum.at(:ets.lookup(:tab_mentions, mention),0),1),fn x->
-        elem(Enum.at(:ets.lookup(:tab_tweet, x),0),2)
-      end
+      tweetsWithMyMentions = if Enum.at(:ets.lookup(:tab_mentions, mention),0) != nil do
+                                Enum.map elem(Enum.at(:ets.lookup(:tab_mentions, mention),0),1),fn x->
+                                  elem(Enum.at(:ets.lookup(:tab_tweet, x),0),2)
+                                end
+                            else
+                                ""
+                            end
       {:reply, tweetsWithMyMentions,{state}}
     end
 

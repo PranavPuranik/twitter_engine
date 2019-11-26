@@ -86,12 +86,12 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert []=:ets.tab2list(:tab_tweet)
 
-    GenServer.cast(Enum.at(clients,0),{:tweet,["@pranav is #hero"],0})
+    GenServer.cast(Enum.at(clients,0),{:tweet,["@subham and @pranav are #hero"],0})
     GenServer.cast(Enum.at(clients,0),{:tweet,["@AlinDobra is #hero"],0})
     GenServer.cast(Enum.at(clients,0),{:tweet,["#DOS is #great"],0})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
-    assert ["@AlinDobra is #hero","@pranav is #hero"] == GenServer.call(Enum.at(clients,0),{:queryHashTags,"#hero"})
+    assert ["@AlinDobra is #hero","@subham and @pranav are #hero"] == GenServer.call(Enum.at(clients,0),{:queryHashTags,"#hero"})
   end
 
   #====================  QUERY TWEETS WITH MY MENTIONS =========================#
@@ -107,6 +107,8 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients,0),{:tweet,["@AlinDobra is #great"],0})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
+    #IO.inspect ["hehe", :ets.match_object(:tab_tweet, {:"_", 1, :"_"})]
+    #IO.inspect [ "haha", GenServer.call(Enum.at(clients,0),{:queryMyMention,clientName})]
     assert  [clientName<>" is #hero",clientName<>" is #champion"] == GenServer.call(Enum.at(clients,0),{:queryMyMention,clientName})
   end
 
