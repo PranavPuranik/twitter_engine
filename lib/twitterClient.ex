@@ -32,41 +32,6 @@ defmodule TwitterEngine.Client do
   end
 
 
-  # def handle_cast({:action,current_state},{x,acts,servernode,clients,tweets_pool}) do
-  #     if(current_state < acts) do
-  #         choice = rem(:rand.uniform(999999),14)
-  #         case choice do
-  #             1 ->
-  #                 #subscribe(x,servernode,clients)
-  #                 tweet_hash(x,servernode,tweets_pool,clients)
-
-  #             2 ->
-  #                 tweet_mention(x,servernode,tweets_pool,clients)
-
-  #             3 ->
-  #                 queryhashtags(x,servernode)
-
-  #             4 ->
-  #                 query_self_mentions(x,servernode)
-
-  #             5 ->
-  #                 discon(x,servernode)
-
-  #             _ ->
-  #                 tweet(x,servernode,tweets_pool)
-  #                 #querytweets(x)
-
-  #         end
-  #         #Process.sleep (:rand.uniform(100))
-  #         #IO.puts "client #{x} act #{acts}"
-  #         GenServer.cast(self(),{:action,current_state + 1})
-  #     else
-  #         IO.puts "User #{x} has finised generating at least #{acts} activities (Tweets/Queries)."
-  #         GenServer.cast(:orc, {:acts_completed})
-  #     end
-  #     {:noreply,{x,acts,servernode,clients,tweets_pool}}
-  #   end
-
   def handle_cast({:deRegister},{id, already_sent, messages, clients}) do
     GenServer.cast(:twitterServer,{:deRegisterUser,id})
     {:noreply, {id, already_sent, messages, clients}}
@@ -124,24 +89,13 @@ defmodule TwitterEngine.Client do
   end
 
   def handle_cast({:simulate,tweet_pool},{id, already_sent, messages, clients}) do
-    #   if(current_state < numMsg && elem(Enum.at(:ets.lookup(:tweet_counter,"count"),0),1)<numMsg) do
-    #     GenServer.cast(self(),{:tweet,tweet_pool,0})
-    #     GenServer.cast(self(),{:simulate,current_state+1,numMsg,tweet_pool})
-    #   else
-    #     IO.inspect ["User #{id} done with #{messages}!!", :ets.lookup(:tab_user, id)], charlists: :as_lists
-    #   end
-    # {:noreply,{id, already_sent, messages, clients}}
-    
-
 
     if(already_sent <= messages) do
       choice = :rand.uniform(20)
-      #IO.puts "#{id} simulate #{choice}"
+     
       case choice do
           1 ->
-              
-              connect_disconnect(id)
-              
+            connect_disconnect(id)
 
           2 ->
               mention = "@client_"<>Integer.to_string(id)
@@ -161,7 +115,6 @@ defmodule TwitterEngine.Client do
               GenServer.cast(self(),{:tweet,[msg], 0})
 
           _ ->
-              
               GenServer.cast(self(),{:tweet,tweet_pool, 0})
               #querytweets(x)
 
@@ -172,6 +125,7 @@ defmodule TwitterEngine.Client do
       
     else
       IO.puts "Client #{id} completed #{messages} tweets."
+      GenServer.cast(:twitterServer, {:done})
       #GenServer.cast(:orc, {:acts_completed})
     end
     {:noreply,{id, already_sent, messages, clients}}

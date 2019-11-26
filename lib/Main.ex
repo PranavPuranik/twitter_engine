@@ -10,17 +10,11 @@ defmodule Main do
       :ets.insert(:registration_counter, {"count",0})
       nodeid_list = Enum.map(1..numClients, fn(x) -> "client_"<>Integer.to_string(x) end)
       ApplicationSupervisor.start_link([numClients, numMessages])
-      
-      IO.puts "We have coded the logic such that, the starting client nodes (with ids 1, 2, 3, 4, etc...) have more followers"
-      IO.puts "So, the number of messages these client nodes send will be more."
-
-      IO.puts "For #{numClients} clients and #{numMessages} messages,"
-
-
-      tic = System.system_time(:millisecond)
+      :ets.new(:time_printing, [:set, :public, :named_table])
+      :ets.insert(:time_printing, {'tic', System.system_time(:millisecond)})
       simulator(numClients, numMessages,nodeid_list)
-      toc = System.system_time(:millisecond)
-      IO.puts "Total time taken => #{(toc-tic)/1000} seconds"
+      
+      #IO.puts "Total time taken => #{(toc-tic)/1000} seconds"
 
     end
 

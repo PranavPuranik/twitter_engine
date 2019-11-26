@@ -2,7 +2,7 @@ defmodule TwitterengineTest do
   use ExUnit.Case, async: true
 
   setup do
-    server_pid = start_supervised!({TwitterEngine.Server,{"twitterServer"}})
+    server_pid = start_supervised!({TwitterEngine.Server,{"twitterServer", 10}})
     client_1_pid = start_supervised!({TwitterEngine.Client,{1,2,2}}, id: "client_1")
     client_2_pid = start_supervised!({TwitterEngine.Client,{2,2,2}}, id: "client_2")
     clients = [client_1_pid, client_2_pid]
