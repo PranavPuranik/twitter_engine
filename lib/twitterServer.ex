@@ -21,12 +21,6 @@ defmodule TwitterEngine.Server do
     end
 
 
-    def handle_cast({:disconnection,x},{extra_activities, clientsCompleted, numClients})do
-        :ets.update_element(:tab_user,x,{4, "disconnected"})
-        :ets.insert_new(:tab_msgq,{x,[]})
-        {:noreply,{extra_activities, clientsCompleted, numClients}}
-    end
-
     def handle_cast({:registerUser,x},{extra_activities, clientsCompleted, numClients}) do
         #update table (add a new user x)
         :ets.insert_new(:tab_user, {x, [], [], "connected",0})
@@ -36,12 +30,19 @@ defmodule TwitterEngine.Server do
         {:noreply,{extra_activities, clientsCompleted, numClients}}
     end
 
-    def handle_cast({:deRegisterUser,x},{extra_activities, clientsCompleted, numClients}) do
+    def handle_cast({:deleteAccount,x},{extra_activities, clientsCompleted, numClients}) do
         #update table (add a new user x)
         :ets.delete(:tab_user,x)
         #GenServer.cast({:orc,extra_activities},{:registered})
         {:noreply,{extra_activities + 1, clientsCompleted, numClients}}
     end
+
+    def handle_cast({:disconnection,x},{extra_activities, clientsCompleted, numClients})do
+        :ets.update_element(:tab_user,x,{4, "disconnected"})
+        :ets.insert_new(:tab_msgq,{x,[]})
+        {:noreply,{extra_activities, clientsCompleted, numClients}}
+    end
+
 
     def handle_cast({:reconnection,id},{extra_activities, clientsCompleted, numClients})do
         :ets.update_element(:tab_user,id,{4, "connected"})
@@ -130,7 +131,7 @@ defmodule TwitterEngine.Server do
 
     def handle_cast({:done},{extra_activities, clientsCompleted, numClients}) do
         
-        #IO.inspect clientsCompleted
+        #IO.inspect :ets.lookup(:tab_user, clientsCompleted), charlists: :as_lists
 
 
         if clientsCompleted == numClients do
@@ -141,6 +142,8 @@ defmodule TwitterEngine.Server do
             IO.puts "#{numClients} clients sent #{:ets.info(:tab_tweet, :size)} messages and performed #{extra_activities} activities."
             IO.puts "It took #{toc - tic} millisecond (or #{(toc - tic)/1000} seconds)."
             IO.puts "Total actions per second = #{(:ets.info(:tab_tweet, :size) + extra_activities)/((toc - tic)/1000)}"
+            
+            System.halt(1)
         end
 
 

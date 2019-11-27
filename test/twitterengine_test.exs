@@ -31,7 +31,7 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
 
-    GenServer.cast(Enum.at(clients,0),{:deRegister})
+    GenServer.cast(Enum.at(clients,0),{:deleteAccount})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert [] =:ets.lookup(:tab_user, 1)
@@ -75,6 +75,7 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients,0),{:tweet,["@pranav is @hero"], 0})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
+
     assert [{"@pranav", _}] = :ets.lookup(:tab_mentions, "@pranav")
     assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
   end

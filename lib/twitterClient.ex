@@ -9,19 +9,24 @@ defmodule TwitterEngine.Client do
   def init({id, messages, clients}) do
 
     #ZIPF - considering the clients with starting ids have more subscribers
-    messages = cond do
-                 id <= (clients*0.01) ->
-                     messages + (messages * 20)
+    #messages = 
 
-                 id <= (clients*0.1) ->
-                     messages + (messages * 10)
+              # cond do
+              #    id <= (clients*0.01) ->
+              #        messages + (messages * 25)
 
-                 id <= (clients*0.6) ->
-                     messages + (messages * 2)
+              #    id <= (clients*0.1) ->
+              #        messages + (messages * 15)
 
-                 true ->
-                     messages + 1
-              end
+              #    id <= (clients*0.6) ->
+              #        messages + (messages * 8)
+
+              #    id <= (clients*0.6) ->
+              #        messages + (messages * 2)
+
+              #    true ->
+              #        messages + 1
+              # end
     already_sent = 0
     {:ok, {id, already_sent, messages, clients}}
   end
@@ -32,8 +37,8 @@ defmodule TwitterEngine.Client do
   end
 
 
-  def handle_cast({:deRegister},{id, already_sent, messages, clients}) do
-    GenServer.cast(:twitterServer,{:deRegisterUser,id})
+  def handle_cast({:deleteAccount},{id, already_sent, messages, clients}) do
+    GenServer.cast(:twitterServer,{:deleteAccount,id})
     {:noreply, {id, already_sent, messages, clients}}
   end
 
@@ -67,6 +72,12 @@ defmodule TwitterEngine.Client do
   def handle_call({:allSubscribedTweets},_from,{id, already_sent, messages, clients})do
     tweets = GenServer.call(:twitterServer,{:allSubscribedTweets,id}, :infinity)
     {:reply,tweets,{id, already_sent, messages, clients}}
+  end
+
+  def handle_cast({:set_Messaages, subscribers},{id, already_sent, messages, clients}) do
+    messages = length(subscribers) * 10
+
+    {:noreply, {id, already_sent, messages, clients}}
   end
 
   def handle_cast({:on_the_feed, tweet_by,message, chance},{id, already_sent, messages, clients})do
@@ -124,7 +135,7 @@ defmodule TwitterEngine.Client do
       GenServer.cast(self(),{:simulate,tweet_pool})
       
     else
-      IO.puts "Client #{id} completed #{messages} tweets."
+      #IO.puts "Client #{id} completed #{messages} tweets."
       GenServer.cast(:twitterServer, {:done})
       #GenServer.cast(:orc, {:acts_completed})
     end
