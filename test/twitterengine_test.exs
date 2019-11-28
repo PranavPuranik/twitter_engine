@@ -2,7 +2,7 @@ defmodule TwitterengineTest do
   use ExUnit.Case, async: true
 
   setup do
-    server_pid = start_supervised!({TwitterEngine.Server,{"twitterServer"}})
+    server_pid = start_supervised!({TwitterEngine.Server,{"twitterServer", 10}})
     client_1_pid = start_supervised!({TwitterEngine.Client,{1,2,2}}, id: "client_1")
     client_2_pid = start_supervised!({TwitterEngine.Client,{2,2,2}}, id: "client_2")
     clients = [client_1_pid, client_2_pid]
@@ -31,7 +31,7 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert [{1, [], [], "connected", 0}] =:ets.lookup(:tab_user, 1)
 
-    GenServer.cast(Enum.at(clients,0),{:deRegister})
+    GenServer.cast(Enum.at(clients,0),{:deleteAccount})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
     assert [] =:ets.lookup(:tab_user, 1)
@@ -75,6 +75,7 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients,0),{:tweet,["@pranav is @hero"], 0})
     :sys.get_state(Enum.at(clients,0))
     :sys.get_state(server_pid)
+
     assert [{"@pranav", _}] = :ets.lookup(:tab_mentions, "@pranav")
     assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
   end

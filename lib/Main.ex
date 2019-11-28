@@ -10,17 +10,11 @@ defmodule Main do
       :ets.insert(:registration_counter, {"count",0})
       nodeid_list = Enum.map(1..numClients, fn(x) -> "client_"<>Integer.to_string(x) end)
       ApplicationSupervisor.start_link([numClients, numMessages])
-      
-      IO.puts "We have coded the logic such that, the starting client nodes (with ids 1, 2, 3, 4, etc...) have more followers"
-      IO.puts "So, the number of messages these client nodes send will be more."
-
-      IO.puts "For #{numClients} clients and #{numMessages} messages,"
-
-
-      tic = System.system_time(:millisecond)
+      :ets.new(:time_printing, [:set, :public, :named_table])
+      :ets.insert(:time_printing, {'tic', System.system_time(:millisecond)})
       simulator(numClients, numMessages,nodeid_list)
-      toc = System.system_time(:millisecond)
-      IO.puts "Total time taken => #{(toc-tic)/1000} seconds"
+      
+      #IO.puts "Total time taken => #{(toc-tic)/1000} seconds"
 
     end
 
@@ -45,29 +39,51 @@ defmodule Main do
     #topmost nodes will be the most subscribed nodes
     def subscribe(nodeid_list, clients) do
     	#IO.inspect ["Clients: ", clients]
+
+    	#considering s = 1
+    	c = 1 / Enum.sum(Enum.map(1..clients, fn n -> 1/n end))
+
+    	all_clients = Enum.map(1..clients, fn n -> n end)
+
     	Enum.map(nodeid_list, fn(id) ->
+    		#IO.inspect all_clients --[elem(Integer.parse(String.slice(id, 7..-1)),0)]
+			subscribers = 	Enum.take_random(
+								all_clients --[elem(Integer.parse(String.slice(id, 7..-1)),0)], round(c * clients/ elem(Integer.parse(String.slice(id, 7..-1)),0))
+							)
+							
+							# cond do
+			    # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.01) ->
+			    # 					Enum.map(Enum.take_random(all_clients -- [id]), fn n -> 
+			    # 						n 
+			    # 					end)
 
-		subscribe_to = 	cond do
-		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.01) ->
-		    					Enum.map(1..round(clients*0.01), fn n -> n end) -- [id]
+			    # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.1) ->
+			    # 					#IO.inspect "here"
+			    # 					Enum.map(1..round(clients*0.1), fn n -> n end) -- [id]
 
-		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.1) ->
-		    					#IO.inspect "here"
-		    					Enum.map(1..round(clients*0.1), fn n -> n end) -- [id]
+			    # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.6) ->
+			    # 					Enum.map(1..round(clients*0.6), fn n -> n end) -- [id]
 
-		    				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.6) ->
-		    					Enum.map(1..round(clients*0.6), fn n -> n end) -- [id]
+			    # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.9) ->
+			    # 					Enum.map(1..round(clients*0.9), fn n -> n end) -- [id]
 
-		    				true ->
-		    					#IO.inspect id
-		    					Enum.take_random(1..clients, round(clients*0.8)) -- [id]
-		    			end
-		#IO.inspect [id, subscribe_to]
-		GenServer.cast(String.to_atom(id),{:subscribe, subscribe_to})
+			    # 				true ->
+			    # 					#IO.inspect id
+			    # 					random_to_subscribe = Enum.random(1..clients)
+			    # 					Enum.map(1..random_to_subscribe,fn n -> n end) -- [id]
+			    # 			end
+			IO.inspect [id, List.flatten(subscribers)], charlists: :as_lists
+
+			Enum.each(subscribers, fn n-> 
+				GenServer.cast(String.to_atom("client_"<>Integer.to_string(n)),
+					{:subscribe, [elem(Integer.parse(String.slice(id, 7..-1)),0)]})
+    		end)
+
+			GenServer.cast(String.to_atom(id), {:set_Messaages, subscribers})
 
     	end)
-    	#:sys.get_state(Enum.at(clients,1))
-	    #:sys.get_state(Enum.at(clients,0))
-	    #:sys.get_state(:twitterServer)
+
+
+
     end
 end
