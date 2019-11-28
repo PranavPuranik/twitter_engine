@@ -72,7 +72,7 @@ defmodule Main do
 			    # 					random_to_subscribe = Enum.random(1..clients)
 			    # 					Enum.map(1..random_to_subscribe,fn n -> n end) -- [id]
 			    # 			end
-			#IO.inspect [id, List.flatten(subscribers)], charlists: :as_lists
+			IO.inspect [id, List.flatten(subscribers)], charlists: :as_lists
 
 			Enum.each(subscribers, fn n-> 
 				GenServer.cast(String.to_atom("client_"<>Integer.to_string(n)),
