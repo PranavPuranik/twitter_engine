@@ -44,6 +44,11 @@ defmodule TwitterEngine.Client do
     {:noreply, {id, already_sent, messages, clients}}
   end
 
+  def handle_cast({:reconnect}, {id, already_sent, messages, clients}) do
+    GenServer.cast(:twitterServer, {:reconnection, id})
+    {:noreply, {id, already_sent, messages, clients}}
+  end
+
   def handle_cast({:deleteAccount}, {id, already_sent, messages, clients}) do
     GenServer.cast(:twitterServer, {:deleteAccount, id})
     {:noreply, {id, already_sent, messages, clients}}

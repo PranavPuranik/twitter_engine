@@ -90,8 +90,7 @@ defmodule TwitterEngine.Server do
 	    if exists == [] do
 	      GenServer.cast(
 	        String.to_atom("client_" <> Integer.to_string(id)),
-	        {:notification, "Create an account first!"}
-	      )
+	        {:notification, "Create an account first!"})
     	else
 	        [{_, _, followers_list, _, old_count}] = :ets.lookup(:tab_user, id)
 	        :ets.update_element(:tab_user, id, {5, old_count + 1})
@@ -107,9 +106,10 @@ defmodule TwitterEngine.Server do
 	            send_if_alive(y, id, message, tweetid, extra_activities, 0)
 	          end)
 	        else
-	          Enum.map(followers_list, fn y ->
-	            send_if_alive(y, id, message, tweetid, extra_activities, 1)
-	          end)
+              Enum.map(followers_list, fn y ->
+                send_if_alive(y, id, message, tweetid, extra_activities, 1)
+              end)
+            end
         end
     end
 

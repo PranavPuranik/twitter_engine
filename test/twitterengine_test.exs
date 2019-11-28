@@ -41,7 +41,7 @@ defmodule TwitterengineTest do
                     {:"$gen_cast", {:notification, "account already exists"}}}
   end
 
-  # ====================  DELETE ACCOUNT TESTING =========================#
+  # ====================  TEST CASE #3: DELETE ACCOUNT TESTING =========================#
   test "De-Registration", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -54,7 +54,7 @@ defmodule TwitterengineTest do
     assert [] = :ets.lookup(:tab_user, 1)
   end
 
-  # ====================  TWEET TESTING =========================#
+  # ====================  TEST CASE #4: TWEET TESTING =========================#
   test "Tweet", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     assert [] = :ets.tab2list(:tab_tweet)
@@ -66,7 +66,7 @@ defmodule TwitterengineTest do
     assert contains
   end
 
-  # ==================== TWEET TESTING #2: SENTIMENTAL ANALYSIS =========================#
+  # ==================== TEST CASE #5: SENTIMENTAL ANALYSIS =========================#
   test "Tweet-Sentiment", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     assert [] = :ets.tab2list(:tab_tweet)
@@ -91,7 +91,7 @@ defmodule TwitterengineTest do
                     {:"$gen_cast", {:notification, "this might hurt someone's sentiment"}}}
   end
 
-  # ====================  TWEET FROM USER WITHOUT ACCOUNT TESTING =========================#
+  # ====================  TEST CASE #6: TWEET FROM USER WITHOUT ACCOUNT TESTING =========================#
   test "Tweet from Unregistered User", %{server: server_pid, clients: clients} do
     
     assert [] = :ets.lookup(:tab_user, 1)
@@ -111,7 +111,7 @@ defmodule TwitterengineTest do
 
   end
 
-  # ====================  HASHTAG TESTING =========================#
+  # ====================  TEST CASE #7: HASHTAG TESTING =========================#
   test "DoubleHashTag", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -126,7 +126,7 @@ defmodule TwitterengineTest do
     assert [{"#great", _}] = :ets.lookup(:tab_hashtag, "#great")
   end
 
-  # ====================  MENTIONS TESTING =========================#
+  # ====================  TEST CASE #8: MENTIONS TESTING =========================#
   test "DoubleMentions", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -144,7 +144,7 @@ defmodule TwitterengineTest do
 
 
 
-  # ====================  HASHTAG TESTING #2=========================#
+  # ====================  TEST CASE #9: HASHTAG TESTING #2=========================#
   # when there isn't any hashtag queried
   test "HashTag2", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
@@ -160,7 +160,7 @@ defmodule TwitterengineTest do
     assert [{"#great", _}] = :ets.lookup(:tab_hashtag, "#great")
   end
 
-  # ====================  MENTIONS TESTING #2=========================#
+  # ====================  TEST CASE #10: MENTIONS TESTING #2=========================#
   # when user has no mentions queried
   test "Mentions2", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
@@ -176,7 +176,7 @@ defmodule TwitterengineTest do
     assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
   end
 
-  # ====================  HASHTAGS AND MENTIONS BOTH =========================#
+  # ====================  TEST CASE #11: HASHTAGS AND MENTIONS BOTH =========================#
   test "Hashtags and Mentions both", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -194,7 +194,7 @@ defmodule TwitterengineTest do
     assert [{"#masterchef", _}] = :ets.lookup(:tab_hashtag, "#masterchef")
   end
 
-  # ====================  QUERY TWEETS WITH HASHTAG TESTING =========================#
+  # ====================  TEST CASE #12: QUERY TWEETS WITH HASHTAG TESTING =========================#
   test "Query-tweets with specific hashtags", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -212,7 +212,7 @@ defmodule TwitterengineTest do
   end
 
 
-  # ====================  QUERY TWEETS WITH MY MENTIONS =========================#
+  # ====================  TEST CASE #13: QUERY TWEETS WITH MY MENTIONS =========================#
   test "Query my mentions and hashtags together", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -228,13 +228,11 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients, 0), {:tweet, ["@AlinDobra is #great"], 0})
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
-    # IO.inspect ["hehe", :ets.match_object(:tab_tweet, {:"_", 1, :"_"})]
-    # IO.inspect [ "haha", GenServer.call(Enum.at(clients,0),{:queryMyMention,clientName})]
     assert [clientName <> " is #hero", clientName <> " is #champion"] ==
              GenServer.call(Enum.at(clients, 0), {:queryMyMention, clientName})
   end
 
-  # ====================  SUBSCRIBER TESTING =========================#
+  # ====================  TEST CASE #14: SUBSCRIBER TESTING =========================#
   test "Subscribe", %{server: server_pid, clients: clients} do
     assert [] = :ets.lookup(:tab_user, 1)
     assert [] = :ets.lookup(:tab_user, 2)
@@ -256,7 +254,7 @@ defmodule TwitterengineTest do
     assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
   end
 
-  # ====================  RETWEET AND SUBSCRIBED USER RECEIVING MESSAGE TESTING =========================#
+  # ====================  TEST CASE #15: RETWEET AND SUBSCRIBED USER RECEIVING MESSAGE TESTING =========================#
   test "Retweet and Subscribed user receiving message", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     GenServer.cast(Enum.at(clients, 1), {:register})
@@ -283,7 +281,7 @@ defmodule TwitterengineTest do
     assert client2_tweet == String.slice(client1_retweet, 0..-28)
   end
 
-  # ====================  QUERY TWEETS SUBSCRIBED TO =========================#
+  # ====================  TEST CASE #16: QUERY TWEETS SUBSCRIBED TO =========================#
   test "Query-tweets subscribed to", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     GenServer.cast(Enum.at(clients, 1), {:register})
@@ -309,7 +307,7 @@ defmodule TwitterengineTest do
     assert ["#tweet from 2"] = GenServer.call(Enum.at(clients, 0), {:allSubscribedTweets})
   end
 
-  # ====================  LIVE TWEETS TEST (if user is subscried) =========================#
+  # ====================  TEST CASE #17: LIVE TWEETS TEST (if user is subscried) =========================#
   test "Live-tweets test", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     GenServer.cast(Enum.at(clients, 1), {:register})
@@ -337,7 +335,7 @@ defmodule TwitterengineTest do
     assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "#tweet from 2", _}}}
   end
 
-  # ====================  LIVE TWEETS TEST (if user is subscried) =========================#
+  # ====================  TEST CASE #18: LIVE DISCONNECTION AND RECONNECTION (if user is subscried) =========================#
   test "Live-tweets test2", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     GenServer.cast(Enum.at(clients, 1), {:register})
@@ -370,7 +368,17 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients, 1), {:tweet, ["2nd #tweet from 2"], 0})
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(server_pid)
-    IO.inspect :ets.lookup(:tab_msgq, 1)
+
+    assert [{1, ["2T2"]}] = :ets.lookup(:tab_msgq, 1)
+
+    GenServer.cast(Enum.at(clients, 0), {:reconnect})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+    assert [{1, [2], [], "connected", 0}] = :ets.lookup(:tab_user, 1)
+    
+    :sys.get_state(Enum.at(clients, 1))
+    :sys.get_state(server_pid)
+    assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "2nd #tweet from 2", _}}}
 
   end
 end
