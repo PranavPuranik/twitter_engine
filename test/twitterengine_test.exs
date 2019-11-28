@@ -59,10 +59,10 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients, 0), {:register})
     assert [] = :ets.tab2list(:tweet_dB)
 
-    GenServer.cast(Enum.at(clients, 0), {:tweet, ["foo", "bar"], 0})
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["#COP5615 is #great", "#DOS is #great"], 0})
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
-    contains = Enum.member?(["foo", "bar"], elem(Enum.at(:ets.tab2list(:tweet_dB), 0), 2))
+    contains = Enum.member?(["#COP5615 is #great", "#DOS is #great"], elem(Enum.at(:ets.tab2list(:tweet_dB), 0), 2))
     assert contains
   end
 
@@ -81,7 +81,7 @@ defmodule TwitterengineTest do
     pid = Enum.at(clients, 0)
     :erlang.trace(pid, true, [:receive])
 
-    GenServer.cast(Enum.at(clients, 0), {:tweet, ["@parth hate @pranav","@pranav hate1 @parth"], 0})
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["@parth hate @pranav"], 0})
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
 
@@ -101,7 +101,7 @@ defmodule TwitterengineTest do
     pid = Enum.at(clients, 0)
     :erlang.trace(pid, true, [:receive])
 
-    GenServer.cast(Enum.at(clients, 0), {:tweet, ["foo", "bar"], 0})
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["#COP5615 is #great", "#DOS is #great"], 0})
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
 
@@ -168,7 +168,7 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
     assert [] = :ets.tab2list(:tweet_dB)
 
-    GenServer.cast(Enum.at(clients, 0), {:tweet, ["I am is @hero"], 0})
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["I am @hero"], 0})
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
 
@@ -267,7 +267,7 @@ defmodule TwitterengineTest do
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(server_pid)
 
-    GenServer.cast(Enum.at(clients, 1), {:tweet, ["foo", "bar"], 1})
+    GenServer.cast(Enum.at(clients, 1), {:tweet, ["#COP5615 is #great", "#DOS is #great"], 1})
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
@@ -299,12 +299,12 @@ defmodule TwitterengineTest do
     # adding to follower list
     assert [{2, [], [1], "connected", 0}] = :ets.lookup(:user_dB, 2)
 
-    GenServer.cast(Enum.at(clients, 1), {:tweet, ["#tweet from 2"], 0})
-    GenServer.cast(Enum.at(clients, 0), {:tweet, ["#tweet from 1"], 0})
+    GenServer.cast(Enum.at(clients, 1), {:tweet, ["#great #tweet from 2"], 0})
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["#great #tweet from 1"], 0})
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
-    assert ["#tweet from 2"] = GenServer.call(Enum.at(clients, 0), {:allSubscribedTweets})
+    assert ["#great #tweet from 2"] = GenServer.call(Enum.at(clients, 0), {:allSubscribedTweets})
   end
 
   # ====================  TEST CASE #17: LIVE TWEETS TEST (if user is subscried) =========================#
@@ -331,7 +331,6 @@ defmodule TwitterengineTest do
     GenServer.cast(Enum.at(clients, 1), {:tweet, ["#tweet from 2"], 0})
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(server_pid)
-
     assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "#tweet from 2", _}}}
   end
 
@@ -355,17 +354,17 @@ defmodule TwitterengineTest do
 
     pid = Enum.at(clients, 0)
     :erlang.trace(pid, true, [:receive])
-    GenServer.cast(Enum.at(clients, 1), {:tweet, ["#tweet from 2"], 0})
+    GenServer.cast(Enum.at(clients, 1), {:tweet, ["#great tweet from 2"], 0})
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(server_pid)
-    assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "#tweet from 2", _}}}
+    assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "#great tweet from 2", _}}}
 
     GenServer.cast(Enum.at(clients, 0), {:disconnect})
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
     assert [{1, [2], [], "disconnected", 0}] = :ets.lookup(:user_dB, 1)
 
-    GenServer.cast(Enum.at(clients, 1), {:tweet, ["2nd #tweet from 2"], 0})
+    GenServer.cast(Enum.at(clients, 1), {:tweet, ["2nd #great tweet from 2"], 0})
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(server_pid)
 
@@ -378,7 +377,7 @@ defmodule TwitterengineTest do
     
     :sys.get_state(Enum.at(clients, 1))
     :sys.get_state(server_pid)
-    assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "2nd #tweet from 2", _}}}
+    assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "2nd #great tweet from 2", _}}}
 
   end
 end

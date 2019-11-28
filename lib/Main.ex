@@ -55,27 +55,6 @@ defmodule Main do
           round(c * clients / elem(Integer.parse(String.slice(id, 7..-1)), 0))
         )
 
-      # cond do
-      # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.01) ->
-      # 					Enum.map(Enum.take_random(all_clients -- [id]), fn n -> 
-      # 						n 
-      # 					end)
-
-      # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.1) ->
-      # 					#IO.inspect "here"
-      # 					Enum.map(1..round(clients*0.1), fn n -> n end) -- [id]
-
-      # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.6) ->
-      # 					Enum.map(1..round(clients*0.6), fn n -> n end) -- [id]
-
-      # 				elem(Integer.parse(String.slice(id, 7..-1)),0) <= (clients*0.9) ->
-      # 					Enum.map(1..round(clients*0.9), fn n -> n end) -- [id]
-
-      # 				true ->
-      # 					#IO.inspect id
-      # 					random_to_subscribe = Enum.random(1..clients)
-      # 					Enum.map(1..random_to_subscribe,fn n -> n end) -- [id]
-      # 			end
       IO.inspect([id, List.flatten(subscribers)], charlists: :as_lists)
 
       Enum.each(subscribers, fn n ->

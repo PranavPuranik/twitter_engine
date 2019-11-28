@@ -82,7 +82,7 @@ defmodule TwitterEngine.Server do
   def handle_cast({:tweet, id, message, retweet_testing},{extra_activities, clientsCompleted, numClients}) do
     # update tweet counter
     # IO.inspect "#{id} --> #{message} "
-    if analyze(message) == true do
+    if analyze(message) == false do
        GenServer.cast(String.to_atom("client_" <> Integer.to_string(id)),{:notification, "this might hurt someone's sentiment"})
     else
     	exists = :ets.lookup(:user_dB, id)
@@ -252,7 +252,11 @@ defmodule TwitterEngine.Server do
   end
 
   def analyze(msg) do
-    Regex.match?(~r/hate/, msg)
+    if Veritaserum.analyze(msg) >= 0 do
+        true
+    else
+        false
+    end
   end
 
 end
