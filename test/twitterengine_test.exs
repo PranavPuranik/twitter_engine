@@ -63,7 +63,32 @@ defmodule TwitterengineTest do
     :sys.get_state(Enum.at(clients, 0))
     :sys.get_state(server_pid)
     contains = Enum.member?(["foo", "bar"], elem(Enum.at(:ets.tab2list(:tab_tweet), 0), 2))
-    assert contains = true
+    assert contains
+  end
+
+  # ==================== TWEET TESTING #2: SENTIMENTAL ANALYSIS =========================#
+  test "Tweet-Sentiment", %{server: server_pid, clients: clients} do
+    GenServer.cast(Enum.at(clients, 0), {:register})
+    assert [] = :ets.tab2list(:tab_tweet)
+
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["@parth love @pranav"], 0})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+
+    contains =Enum.member?(["@parth love @pranav"], elem(Enum.at(:ets.tab2list(:tab_tweet), 0), 2))
+    assert contains
+
+    pid = Enum.at(clients, 0)
+    :erlang.trace(pid, true, [:receive])
+
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["@parth hate @pranav","@pranav hate1 @parth"], 0})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+
+    contains = Enum.member?(["@parth hate @pranav"], elem(Enum.at(:ets.tab2list(:tab_tweet), 0), 2))
+    assert !contains
+    assert_receive {:trace, ^pid, :receive,
+                    {:"$gen_cast", {:notification, "this might hurt someone's sentiment"}}}
   end
 
   # ====================  TWEET FROM USER WITHOUT ACCOUNT TESTING =========================#
@@ -116,6 +141,41 @@ defmodule TwitterengineTest do
     assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
   end
 
+
+
+
+  # ====================  HASHTAG TESTING #2=========================#
+  # when there isn't any hashtag queried
+  test "HashTag2", %{server: server_pid, clients: clients} do
+    GenServer.cast(Enum.at(clients, 0), {:register})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+    assert [] = :ets.tab2list(:tab_tweet)
+
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["#COP5615 is #great"], 0})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+
+    assert [] = :ets.lookup(:tab_hashtag, "#DOS")
+    assert [{"#great", _}] = :ets.lookup(:tab_hashtag, "#great")
+  end
+
+  # ====================  MENTIONS TESTING #2=========================#
+  # when user has no mentions queried
+  test "Mentions2", %{server: server_pid, clients: clients} do
+    GenServer.cast(Enum.at(clients, 0), {:register})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+    assert [] = :ets.tab2list(:tab_tweet)
+
+    GenServer.cast(Enum.at(clients, 0), {:tweet, ["I am is @hero"], 0})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+
+    assert [] = :ets.lookup(:tab_mentions, "@pranav")
+    assert [{"@hero", _}] = :ets.lookup(:tab_mentions, "@hero")
+  end
+
   # ====================  HASHTAGS AND MENTIONS BOTH =========================#
   test "Hashtags and Mentions both", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
@@ -133,7 +193,6 @@ defmodule TwitterengineTest do
     assert [{"@subham", _}] = :ets.lookup(:tab_mentions, "@subham")
     assert [{"#masterchef", _}] = :ets.lookup(:tab_hashtag, "#masterchef")
   end
-
 
   # ====================  QUERY TWEETS WITH HASHTAG TESTING =========================#
   test "Query-tweets with specific hashtags", %{server: server_pid, clients: clients} do
@@ -276,5 +335,42 @@ defmodule TwitterengineTest do
     :sys.get_state(server_pid)
 
     assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "#tweet from 2", _}}}
+  end
+
+  # ====================  LIVE TWEETS TEST (if user is subscried) =========================#
+  test "Live-tweets test2", %{server: server_pid, clients: clients} do
+    GenServer.cast(Enum.at(clients, 0), {:register})
+    GenServer.cast(Enum.at(clients, 1), {:register})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(Enum.at(clients, 1))
+    :sys.get_state(server_pid)
+
+    GenServer.cast(Enum.at(clients, 0), {:subscribe, [2]})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(Enum.at(clients, 1))
+    :sys.get_state(server_pid)
+
+    # adding to subscriber list
+    assert [{1, [2], [], "connected", 0}] = :ets.lookup(:tab_user, 1)
+    # adding to follower list
+    assert [{2, [], [1], "connected", 0}] = :ets.lookup(:tab_user, 2)
+
+    pid = Enum.at(clients, 0)
+    :erlang.trace(pid, true, [:receive])
+    GenServer.cast(Enum.at(clients, 1), {:tweet, ["#tweet from 2"], 0})
+    :sys.get_state(Enum.at(clients, 1))
+    :sys.get_state(server_pid)
+    assert_receive {:trace, ^pid, :receive, {:"$gen_cast", {:on_the_feed, 2, "#tweet from 2", _}}}
+
+    GenServer.cast(Enum.at(clients, 0), {:disconnect})
+    :sys.get_state(Enum.at(clients, 0))
+    :sys.get_state(server_pid)
+    assert [{1, [2], [], "disconnected", 0}] = :ets.lookup(:tab_user, 1)
+
+    GenServer.cast(Enum.at(clients, 1), {:tweet, ["2nd #tweet from 2"], 0})
+    :sys.get_state(Enum.at(clients, 1))
+    :sys.get_state(server_pid)
+    IO.inspect :ets.lookup(:tab_msgq, 1)
+
   end
 end

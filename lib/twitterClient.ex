@@ -39,6 +39,11 @@ defmodule TwitterEngine.Client do
     {:noreply, {id, already_sent, messages, clients}}
   end
 
+  def handle_cast({:disconnect}, {id, already_sent, messages, clients}) do
+    GenServer.cast(:twitterServer, {:disconnection, id})
+    {:noreply, {id, already_sent, messages, clients}}
+  end
+
   def handle_cast({:deleteAccount}, {id, already_sent, messages, clients}) do
     GenServer.cast(:twitterServer, {:deleteAccount, id})
     {:noreply, {id, already_sent, messages, clients}}
@@ -47,7 +52,6 @@ defmodule TwitterEngine.Client do
   def handle_cast({:tweet, tweet_pool, retweet_testing}, {id, already_sent, messages, clients}) do
     # IO.puts "#{id} tweeting #{already_sent} / #{messages}"
     msg = Enum.random(tweet_pool)
-
     tweetId =
       if retweet_testing == 0 do
         GenServer.cast(:twitterServer, {:tweet, id, msg, 0})
