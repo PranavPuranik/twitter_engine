@@ -11,9 +11,9 @@ Pranav Puranik | UFID - 72038540
 #### What is working
 -------------
 - We implemented the complete project as described by the problem statement.
--  Both Twitter Server and Client are Genserver nodes. 
-- Initially, all Clients register with the Twitter Server. 
-- Then they subscribe each other based on Zipf distribution. Zipf depends on num_user. Number of messages sent by each user is proportional to number of subscriber. Please check the report for more information.
+- Both Twitter Server and Client are Genserver nodes. 
+- Initially, all Clients registers with the Twitter-Server. 
+- Then they subscribe each other based on Zipf distribution. Zipf depends on num of clients. Number of messages sent by each user is proportional to number of subscriber. Please check the report for more information.
 - Next, we start the simulation. Each client can send tweets with hashtags and mentions, query tweets with his mentions, quey tweets with different hashtags, connect and disconnect with the server, or retweet what he subscribed to. 
 - Once a user completes sending his tweets, he stops tweeting. 
 
