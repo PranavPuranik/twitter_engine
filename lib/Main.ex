@@ -1,4 +1,5 @@
 defmodule Main do
+  
   def main(args) do
     numClients = elem(Integer.parse(Enum.at(args, 0)), 0)
     numMessages = elem(Integer.parse(Enum.at(args, 1)), 0)
