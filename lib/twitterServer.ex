@@ -10,17 +10,17 @@ defmodule TwitterEngine.Server do
     # ets tables
     # IO.puts "Server Started"
     # IO.puts "-------------------------------"
-    :ets.new(:tab_user, [:set, :protected, :named_table])
-    :ets.new(:tab_tweet, [:set, :protected, :named_table])
-    :ets.new(:tab_msgq, [:set, :protected, :named_table])
-    :ets.new(:tab_hashtag, [:set, :protected, :named_table])
-    :ets.new(:tab_mentions, [:set, :protected, :named_table])
+    :ets.new(:user_dB, [:set, :protected, :named_table])
+    :ets.new(:tweet_dB, [:set, :protected, :named_table])
+    :ets.new(:msgQueue_dB, [:set, :protected, :named_table])
+    :ets.new(:hashtag_dB, [:set, :protected, :named_table])
+    :ets.new(:mentions_dB, [:set, :protected, :named_table])
     {:ok, {extra_activities, 1, numClients}}
   end
 
   def handle_cast({:registerUser, x}, {extra_activities, clientsCompleted, numClients}) do
     # update table (add a new user x)
-    exists = :ets.insert_new(:tab_user, {x, [], [], "connected", 0})
+    exists = :ets.insert_new(:user_dB, {x, [], [], "connected", 0})
 
     if !exists do
       GenServer.cast(String.to_atom("client_" <> Integer.to_string(x)),{:notification, "account already exists"})
@@ -35,22 +35,22 @@ defmodule TwitterEngine.Server do
 
   def handle_cast({:deleteAccount, x}, {extra_activities, clientsCompleted, numClients}) do
     # update table (add a new user x)
-    :ets.delete(:tab_user, x)
+    :ets.delete(:user_dB, x)
     # GenServer.cast({:orc,extra_activities},{:registered})
     {:noreply, {extra_activities + 1, clientsCompleted, numClients}}
   end
 
   def handle_cast({:disconnection, x}, {extra_activities, clientsCompleted, numClients}) do
-    :ets.update_element(:tab_user, x, {4, "disconnected"})
-    :ets.insert_new(:tab_msgq, {x, []})
+    :ets.update_element(:user_dB, x, {4, "disconnected"})
+    :ets.insert_new(:msgQueue_dB, {x, []})
     {:noreply, {extra_activities, clientsCompleted, numClients}}
   end
 
   def handle_cast({:reconnection, id}, {extra_activities, clientsCompleted, numClients}) do
-    :ets.update_element(:tab_user, id, {4, "connected"})
-    [{_, tweetlist}] = :ets.lookup(:tab_msgq, id)
-    :ets.delete(:tab_msgq, id)
-    result = Enum.map(tweetlist, fn z -> :ets.lookup(:tab_tweet, z) end)
+    :ets.update_element(:user_dB, id, {4, "connected"})
+    [{_, tweetlist}] = :ets.lookup(:msgQueue_dB, id)
+    :ets.delete(:msgQueue_dB, id)
+    result = Enum.map(tweetlist, fn z -> :ets.lookup(:tweet_dB, z) end)
 
     Enum.map(result, fn [{a, b, c}] ->
       GenServer.cast(String.to_atom("client_" <> Integer.to_string(id)), {:on_the_feed, b, c, 0})
@@ -62,20 +62,20 @@ defmodule TwitterEngine.Server do
   def handle_cast({:subscribe, x, subscribe_to}, {extra_activities, clientsCompleted, numClients}) do
     # update table (add subscribe to for user x)
     subscribe_to = subscribe_to -- [x]
-    [{_, old_list, _, _, _}] = :ets.lookup(:tab_user, x)
+    [{_, old_list, _, _, _}] = :ets.lookup(:user_dB, x)
 
     # subscribe_to = Enum.uniq(subscribe_to) -- [x]
     # IO.puts "user#{x} is now following #{Enum.at(subscribe_to,0)}, #{Enum.at(subscribe_to,1)}"
     new_list = Enum.uniq(old_list ++ subscribe_to)
-    :ets.update_element(:tab_user, x, {2, new_list})
+    :ets.update_element(:user_dB, x, {2, new_list})
 
     # update table (add x to followers list)
     Enum.map(subscribe_to, fn y ->
-      # IO.inspect ["in", y, elem(Enum.at(:ets.lookup(:tab_user, y), 0), 3)], charlists: :as_lists
-      :ets.update_element(:tab_user, y, {3, [x | elem(Enum.at(:ets.lookup(:tab_user, y), 0), 2)]})
+      # IO.inspect ["in", y, elem(Enum.at(:ets.lookup(:user_dB, y), 0), 3)], charlists: :as_lists
+      :ets.update_element(:user_dB, y, {3, [x | elem(Enum.at(:ets.lookup(:user_dB, y), 0), 2)]})
     end)
 
-    # IO.inspect :ets.select(:tab_user, [{{:"$1", :"$2", :"$3",:"$4"}, [], [:"$_"]}])
+    # IO.inspect :ets.select(:user_dB, [{{:"$1", :"$2", :"$3",:"$4"}, [], [:"$_"]}])
     {:noreply, {extra_activities, clientsCompleted, numClients}}
   end
 
@@ -85,21 +85,21 @@ defmodule TwitterEngine.Server do
     if analyze(message) == true do
        GenServer.cast(String.to_atom("client_" <> Integer.to_string(id)),{:notification, "this might hurt someone's sentiment"})
     else
-    	exists = :ets.lookup(:tab_user, id)
+    	exists = :ets.lookup(:user_dB, id)
 
 	    if exists == [] do
 	      GenServer.cast(
 	        String.to_atom("client_" <> Integer.to_string(id)),
 	        {:notification, "Create an account first!"})
     	else
-	        [{_, _, followers_list, _, old_count}] = :ets.lookup(:tab_user, id)
-	        :ets.update_element(:tab_user, id, {5, old_count + 1})
+	        [{_, _, followers_list, _, old_count}] = :ets.lookup(:user_dB, id)
+	        :ets.update_element(:user_dB, id, {5, old_count + 1})
 	        # update tweet table (add msg to tweet list of x)
 	        tweetid = Integer.to_string(id) <> "T" <> Integer.to_string(old_count + 1)
-	        :ets.insert_new(:tab_tweet, {tweetid, id, message})
+	        :ets.insert_new(:tweet_dB, {tweetid, id, message})
 	        # update hashtag and mentions table
-	        hashtag_update(tweetid, message)
-	        mentions_update(tweetid, message)
+	        updateHashTagDB(tweetid, message)
+	        updateMentionsDB(tweetid, message)
 	        # cast message to all subscribers of x if ALIVE
 	        if retweet_testing == 0 do
 	          Enum.map(followers_list, fn y ->
@@ -122,11 +122,11 @@ defmodule TwitterEngine.Server do
         _from,
         {extra_activities, clientsCompleted, numClients}
       ) do
-    # IO.inspect ["qht", Enum.at(:ets.lookup(:tab_hashtag, hashTag),0)]
+    # IO.inspect ["qht", Enum.at(:ets.lookup(:hashtag_dB, hashTag),0)]
     tweetsWithHashTag =
-      if Enum.at(:ets.lookup(:tab_hashtag, hashTag), 0) != nil do
-        Enum.map(elem(Enum.at(:ets.lookup(:tab_hashtag, hashTag), 0), 1), fn x ->
-          elem(Enum.at(:ets.lookup(:tab_tweet, x), 0), 2)
+      if Enum.at(:ets.lookup(:hashtag_dB, hashTag), 0) != nil do
+        Enum.map(elem(Enum.at(:ets.lookup(:hashtag_dB, hashTag), 0), 1), fn x ->
+          elem(Enum.at(:ets.lookup(:tweet_dB, x), 0), 2)
         end)
       else
         ""
@@ -142,9 +142,9 @@ defmodule TwitterEngine.Server do
         {extra_activities, clientsCompleted, numClients}
       ) do
     tweetsWithMyMentions =
-      if Enum.at(:ets.lookup(:tab_mentions, mention), 0) != nil do
-        Enum.map(elem(Enum.at(:ets.lookup(:tab_mentions, mention), 0), 1), fn x ->
-          elem(Enum.at(:ets.lookup(:tab_tweet, x), 0), 2)
+      if Enum.at(:ets.lookup(:mentions_dB, mention), 0) != nil do
+        Enum.map(elem(Enum.at(:ets.lookup(:mentions_dB, mention), 0), 1), fn x ->
+          elem(Enum.at(:ets.lookup(:tweet_dB, x), 0), 2)
         end)
       else
         ""
@@ -159,15 +159,15 @@ defmodule TwitterEngine.Server do
         {extra_activities, clientsCompleted, numClients}
       ) do
     tweets =
-      Enum.map(elem(Enum.at(:ets.lookup(:tab_user, id), 0), 1), fn x ->
-        Enum.at(List.flatten(:ets.match(:tab_tweet, {:_, x, :"$1"})), 0)
+      Enum.map(elem(Enum.at(:ets.lookup(:user_dB, id), 0), 1), fn x ->
+        Enum.at(List.flatten(:ets.match(:tweet_dB, {:_, x, :"$1"})), 0)
       end)
 
     {:reply, tweets, {extra_activities, clientsCompleted, numClients}}
   end
 
   def handle_cast({:done}, {extra_activities, clientsCompleted, numClients}) do
-    # IO.inspect :ets.lookup(:tab_user, clientsCompleted), charlists: :as_lists
+    # IO.inspect :ets.lookup(:user_dB, clientsCompleted), charlists: :as_lists
 
     if clientsCompleted == numClients do
       toc = System.system_time(:millisecond)
@@ -180,7 +180,7 @@ defmodule TwitterEngine.Server do
       IO.puts("So, the number of messages these client nodes send will be more.")
 
       IO.puts(
-        "#{numClients} clients sent #{:ets.info(:tab_tweet, :size)} messages and performed #{
+        "#{numClients} clients sent #{:ets.info(:tweet_dB, :size)} messages and performed #{
           extra_activities
         } activities."
       )
@@ -189,7 +189,7 @@ defmodule TwitterEngine.Server do
 
       IO.puts(
         "Total actions per second = #{
-          (:ets.info(:tab_tweet, :size) + extra_activities) / ((toc - tic) / 1000)
+          (:ets.info(:tweet_dB, :size) + extra_activities) / ((toc - tic) / 1000)
         }"
       )
 
@@ -200,7 +200,7 @@ defmodule TwitterEngine.Server do
   end
 
   def send_if_alive(follower, sender, msg, tweetid, extra_activities, retweet_testing) do
-    status = :ets.lookup_element(:tab_user, follower, 4)
+    status = :ets.lookup_element(:user_dB, follower, 4)
 
     if status == "connected" do
       if retweet_testing == 0 do
@@ -215,37 +215,37 @@ defmodule TwitterEngine.Server do
         )
       end
     else
-      old_msgq = :ets.lookup_element(:tab_msgq, follower, 2)
+      old_msgq = :ets.lookup_element(:msgQueue_dB, follower, 2)
       new_msgq = old_msgq ++ [tweetid]
-      :ets.update_element(:tab_msgq, follower, {2, new_msgq})
+      :ets.update_element(:msgQueue_dB, follower, {2, new_msgq})
     end
   end
 
-  def hashtag_update(tweetid, msg) do
+  def updateHashTagDB(tweetid, msg) do
     hashregex = ~r/\#\w*/
     tags = List.flatten(Regex.scan(hashregex, msg))
 
     Enum.map(tags, fn x ->
-      if :ets.insert_new(:tab_hashtag, {x, [tweetid]}) == false do
+      if :ets.insert_new(:hashtag_dB, {x, [tweetid]}) == false do
         :ets.update_element(
-          :tab_hashtag,
+          :hashtag_dB,
           x,
-          {2, [tweetid] ++ List.flatten(:ets.match(:tab_hashtag, {x, :"$1"}))}
+          {2, [tweetid] ++ List.flatten(:ets.match(:hashtag_dB, {x, :"$1"}))}
         )
       end
     end)
   end
 
-  def mentions_update(tweetid, msg) do
+  def updateMentionsDB(tweetid, msg) do
     hashregex = ~r/\@\w*/
     tags = List.flatten(Regex.scan(hashregex, msg))
 
     Enum.map(tags, fn x ->
-      if :ets.insert_new(:tab_mentions, {x, [tweetid]}) == false do
+      if :ets.insert_new(:mentions_dB, {x, [tweetid]}) == false do
         :ets.update_element(
-          :tab_mentions,
+          :mentions_dB,
           x,
-          {2, [tweetid] ++ List.flatten(:ets.match(:tab_mentions, {x, :"$1"}))}
+          {2, [tweetid] ++ List.flatten(:ets.match(:mentions_dB, {x, :"$1"}))}
         )
       end
     end)
