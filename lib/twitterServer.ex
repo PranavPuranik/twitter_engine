@@ -88,25 +88,36 @@ defmodule TwitterEngine.Server do
       ) do
     # update tweet counter
     # IO.inspect "#{id} --> #{message} "
-    [{_, _, followers_list, _, old_count}] = :ets.lookup(:tab_user, id)
-    :ets.update_element(:tab_user, id, {5, old_count + 1})
-    # update tweet table (add msg to tweet list of x)
-    tweetid = Integer.to_string(id) <> "T" <> Integer.to_string(old_count + 1)
-    :ets.insert_new(:tab_tweet, {tweetid, id, message})
-    # update hashtag and mentions table
-    hashtag_update(tweetid, message)
-    mentions_update(tweetid, message)
-    # cast message to all subscribers of x if ALIVE
-    if retweet_testing == 0 do
-      Enum.map(followers_list, fn y ->
-        send_if_alive(y, id, message, tweetid, extra_activities, 0)
-      end)
+
+    exists = :ets.lookup(:tab_user, id)
+
+    if exists == [] do
+      GenServer.cast(
+        String.to_atom("client_" <> Integer.to_string(id)),
+        {:notification, "Create an account first!"}
+      )
     else
-      Enum.map(followers_list, fn y ->
-        send_if_alive(y, id, message, tweetid, extra_activities, 1)
-      end)
+        [{_, _, followers_list, _, old_count}] = :ets.lookup(:tab_user, id)
+        :ets.update_element(:tab_user, id, {5, old_count + 1})
+        # update tweet table (add msg to tweet list of x)
+        tweetid = Integer.to_string(id) <> "T" <> Integer.to_string(old_count + 1)
+        :ets.insert_new(:tab_tweet, {tweetid, id, message})
+        # update hashtag and mentions table
+        hashtag_update(tweetid, message)
+        mentions_update(tweetid, message)
+        # cast message to all subscribers of x if ALIVE
+        if retweet_testing == 0 do
+          Enum.map(followers_list, fn y ->
+            send_if_alive(y, id, message, tweetid, extra_activities, 0)
+          end)
+        else
+          Enum.map(followers_list, fn y ->
+            send_if_alive(y, id, message, tweetid, extra_activities, 1)
+          end)
+        end
     end
 
+    
     {:noreply, {extra_activities, clientsCompleted, numClients}}
   end
 
