@@ -1,6 +1,6 @@
 defmodule TwitterEngine.Client do
   use GenServer
-
+ 
   # Initialization
   def start_link({id, messages, clients}) do
     GenServer.start_link(__MODULE__, {id, messages, clients}, name: String.to_atom("client_#{id}"))
@@ -41,6 +41,11 @@ defmodule TwitterEngine.Client do
 
   def handle_cast({:disconnect}, {id, already_sent, messages, clients}) do
     GenServer.cast(:twitterServer, {:disconnection, id})
+    {:noreply, {id, already_sent, messages, clients}}
+  end
+
+  def handle_cast({:reconnect}, {id, already_sent, messages, clients}) do
+    GenServer.cast(:twitterServer, {:reconnection, id})
     {:noreply, {id, already_sent, messages, clients}}
   end
 
