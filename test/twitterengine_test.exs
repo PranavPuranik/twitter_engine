@@ -20,7 +20,8 @@ defmodule TwitterengineTest do
 
     assert [{1, [], [], "connected", 0}] = :ets.lookup(:user_dB, 1)
   end
-  # ====================  TEST CASE #2: REGISTRATION TESTING =========================#
+
+  # ====================  TEST CASE #2: RE_REGISTRATION TESTING =========================#
   test "Re-Registration", %{server: server_pid, clients: clients} do
     assert [] = :ets.lookup(:user_dB, 1)
 
@@ -125,7 +126,7 @@ defmodule TwitterengineTest do
     assert [{"#great", _}] = :ets.lookup(:hashtag_dB, "#great")
   end
 
-  # ====================  TEST CASE #8: MENTIONS TESTING =========================#
+  # ====================  TEST CASE #8: MY MENTIONS TESTING =========================#
   test "DoubleMentions", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -143,7 +144,7 @@ defmodule TwitterengineTest do
 
 
 
-  # ====================  TEST CASE #9: HASHTAG TESTING #2=========================#
+  # ====================  TEST CASE #9: FINIDING HASHTAG NEVER TWEETED TESTING  =========================#
   # when there isn't any hashtag queried
   test "HashTag2", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
@@ -159,7 +160,7 @@ defmodule TwitterengineTest do
     assert [{"#great", _}] = :ets.lookup(:hashtag_dB, "#great")
   end
 
-  # ====================  TEST CASE #10: MENTIONS TESTING #2=========================#
+  # ====================  TEST CASE #10: FINIDING MENTIONS NEVER MENTIONED TESTING =========================#
   # when user has no mentions queried
   test "Mentions2", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
@@ -193,7 +194,7 @@ defmodule TwitterengineTest do
     assert [{"#masterchef", _}] = :ets.lookup(:hashtag_dB, "#masterchef")
   end
 
-  # ====================  TEST CASE #12: QUERY TWEETS WITH HASHTAG TESTING =========================#
+  # ====================  TEST CASE #12: QUERY TWEETS WITH HASHTAG =========================#
   test "Query-tweets with specific hashtags", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     :sys.get_state(Enum.at(clients, 0))
@@ -280,7 +281,7 @@ defmodule TwitterengineTest do
     assert client2_tweet == String.slice(client1_retweet, 0..-28)
   end
 
-  # ====================  TEST CASE #16: QUERY TWEETS SUBSCRIBED TO =========================#
+  # ====================  TEST CASE #16: QUERY TWEETS FROM USERS SUBSCRIBED TO =========================#
   test "Query-tweets subscribed to", %{server: server_pid, clients: clients} do
     GenServer.cast(Enum.at(clients, 0), {:register})
     GenServer.cast(Enum.at(clients, 1), {:register})
