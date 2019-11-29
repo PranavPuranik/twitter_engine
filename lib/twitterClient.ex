@@ -7,25 +7,6 @@ defmodule TwitterEngine.Client do
   end
 
   def init({id, messages, clients}) do
-    # ZIPF - considering the clients with starting ids have more subscribers
-    # messages = 
-
-    # cond do
-    #    id <= (clients*0.01) ->
-    #        messages + (messages * 25)
-
-    #    id <= (clients*0.1) ->
-    #        messages + (messages * 15)
-
-    #    id <= (clients*0.6) ->
-    #        messages + (messages * 8)
-
-    #    id <= (clients*0.6) ->
-    #        messages + (messages * 2)
-
-    #    true ->
-    #        messages + 1
-    # end
     already_sent = 0
     {:ok, {id, already_sent, messages, clients}}
   end
@@ -158,7 +139,7 @@ defmodule TwitterEngine.Client do
       # IO.puts "client #{x} act #{acts}"
       GenServer.cast(self(), {:simulate, tweet_pool})
     else
-      IO.puts("Client #{id} completed #{messages} tweets.")
+      #IO.puts("Client #{id} completed #{messages} tweets.")
       GenServer.cast(:twitterServer, {:done})
       # GenServer.cast(:orc, {:acts_completed})
     end
