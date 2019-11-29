@@ -55,7 +55,7 @@ defmodule Main do
           round(c * clients / elem(Integer.parse(String.slice(id, 7..-1)), 0))
         )
 
-      IO.inspect([id, List.flatten(subscribers)], charlists: :as_lists)
+      #IO.inspect([id, List.flatten(subscribers)], charlists: :as_lists)
 
       Enum.each(subscribers, fn n ->
         GenServer.cast(

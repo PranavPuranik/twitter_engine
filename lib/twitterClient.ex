@@ -139,7 +139,7 @@ defmodule TwitterEngine.Client do
       # IO.puts "client #{x} act #{acts}"
       GenServer.cast(self(), {:simulate, tweet_pool})
     else
-      IO.puts("Client #{id} completed #{messages} tweets.")
+      #IO.puts("Client #{id} completed #{messages} tweets.")
       GenServer.cast(:twitterServer, {:done})
       # GenServer.cast(:orc, {:acts_completed})
     end

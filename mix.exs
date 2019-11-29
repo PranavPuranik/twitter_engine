@@ -26,7 +26,9 @@ defmodule Twitterengine.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:veritaserum, "~> 0.2.0"}
+      {:jason, "~> 1.1"},
+      {:veritaserum, "~> 0.2.0", path: 'deps/veritaserum'}
+
     ]
   end
 end
